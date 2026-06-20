@@ -8712,238 +8712,62 @@ body.print-popup-onepage #printArea>*{margin:0 auto!important;page-break-before:
 }
 
 
+/* =========================================================
+   V75 CSS REAL PRINT FIXES
+   ========================================================= */
+/* top info: two rows, 3 pairs per row, readable and no overlap */
+.balanced-top-info{width:100%!important;table-layout:fixed!important;border-collapse:collapse!important;margin:0 0 3mm 0!important;}
+.balanced-top-info th,.balanced-top-info td{height:7.6mm!important;min-height:0!important;padding:1.15mm 1.35mm!important;line-height:1.12!important;vertical-align:middle!important;box-sizing:border-box!important;overflow:hidden!important;white-space:nowrap!important;}
+.balanced-top-info th{width:9.2%!important;background:#eaf2fb!important;font-size:9.2px!important;text-align:center!important;font-weight:800!important;}
+.balanced-top-info td{width:24.1%!important;background:#fff!important;font-size:10.4px!important;text-align:center!important;font-weight:800!important;}
+.balanced-top-info .blank-cell{background:#fff!important;border-color:transparent!important;color:transparent!important;}
+.balanced-top-info .fit-text{max-width:100%!important;display:inline-block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important;line-height:1.05!important;}
+.balanced-top-info .fit-student.fit-sm{font-size:.83em!important}.balanced-top-info .fit-student.fit-xs{font-size:.72em!important}.balanced-top-info .fit-student.fit-xxs{font-size:.62em!important}
+.balanced-top-info .fit-department.fit-sm{font-size:.78em!important}.balanced-top-info .fit-department.fit-xs{font-size:.66em!important}.balanced-top-info .fit-department.fit-xxs{font-size:.56em!important}
+.balanced-top-info .fit-phone{font-size:.86em!important;letter-spacing:0!important}
 
-/* ==========================================================
-   FINAL BATCH FIX v74 - print templates only
-   ملاحظات مجمعة:
-   - توحيد جداول المعلومات العليا ومنع خروج اللون تحت الخلايا.
-   - ترتيب التخفيض/التأجيل/الغياب/تأجيل الامتحان بنفس منطق الجدول العلوي.
-   - منع التفاف الاسم والقسم والهاتف قدر الإمكان مع تصغير خط داخل الخلية.
-   - الاستضافة: منع صباحي→صباحي أو مسائي→مسائي، وضبط السطر والتواقيع.
-   - براءة الذمة: استثمار الفراغ السفلي بتكبير مربعات الأقسام.
-   - عودة/ترقين/عدم رسوب: عناوين التأييد على الطرف لترك مجال للختم.
-   - فحص ومعالجة: استغلال عرض الورقة وتقليل الفراغ الجانبي.
-   ========================================================== */
+/* committee/defer/fee/absence/exam tables: stop blue spill and use compact two rows */
+.committee-sheet .top-info-row th,.deferment-sheet .top-info-row th,.absence-sheet .top-info-row th{background:#eaf2fb!important;}
+.committee-sheet .top-info-row td,.deferment-sheet .top-info-row td,.absence-sheet .top-info-row td{background:#fff!important;}
+.committee-sheet .request-cell{padding-top:2.2mm!important;}
+.committee-sheet .request-intro{line-height:1.55!important;}
+.committee-sheet .fixed-three li{min-height:4.2mm!important;line-height:1.35!important;}
 
-/* 1) جدول المعلومات العلوي في استمارات اللجان */
-.smart-top-info.one-row-top-info{
-  width:100% !important;
-  table-layout:fixed !important;
-  border-collapse:collapse !important;
-  margin:0 0 2.2mm 0 !important;
-  page-break-inside:avoid !important;
-  break-inside:avoid !important;
-  direction:rtl !important;
-}
-.smart-top-info.one-row-top-info tr{height:7.3mm !important;}
-.smart-top-info.one-row-top-info th,
-.smart-top-info.one-row-top-info td{
-  height:7.3mm !important;
-  max-height:7.3mm !important;
-  min-height:0 !important;
-  padding:1.1mm 1.25mm !important;
-  line-height:1.05 !important;
-  vertical-align:middle !important;
-  overflow:hidden !important;
-  white-space:nowrap !important;
-  text-overflow:clip !important;
-  border:1px solid #8d98a5 !important;
-  background-clip:padding-box !important;
-}
-.smart-top-info.one-row-top-info th{
-  background:#e8eef7 !important;
-  font-size:9.3px !important;
-  font-weight:900 !important;
-  color:#0f172a !important;
-}
-.smart-top-info.one-row-top-info td{
-  background:#fff !important;
-  font-size:9.2px !important;
-  font-weight:800 !important;
-  text-align:center !important;
-}
-.smart-top-info.one-row-top-info .top-name-cell .fit-student{font-size:8.7px !important;letter-spacing:-.45px !important;}
-.smart-top-info.one-row-top-info .top-dept-cell .fit-department{font-size:7.6px !important;letter-spacing:-.65px !important;}
-.smart-top-info.one-row-top-info .top-phone-cell .fit-phone{font-size:8.8px !important;direction:ltr !important;}
-.smart-top-info.one-row-top-info .top-stage-cell .fit-short,
-.smart-top-info.one-row-top-info .top-study-cell .fit-short{font-size:8.8px !important;}
-.smart-top-info.one-row-top-info .blank-cell{display:none !important;background:#fff !important;border:0 !important;padding:0 !important;height:0 !important;}
+/* continuity: fifth stage never clipped; smaller checkboxes and wrapped safely */
+.continuity-stage-cell{white-space:normal!important;overflow:visible!important;text-align:center!important;font-size:9.6px!important;line-height:1.12!important;padding-inline:.4mm!important;}
+.continuity-stage-cell .stage-print-option{display:inline-flex!important;gap:.22mm!important;margin-inline:.12mm!important;font-size:9.35px!important;white-space:nowrap!important;letter-spacing:-.25px!important;}
+.continuity-stage-cell .square-mark,.continuity-stage-cell .stage-print-option .square-mark{width:9.6px!important;height:9.6px!important;min-width:9.6px!important;font-size:7px!important;border-width:1px!important;}
+.exact-continuity-info .continuity-department-cell .fit-department{font-size:.66em!important;letter-spacing:-.65px!important;}
+.exact-continuity-info .continuity-name-cell .fit-student{font-size:.72em!important;letter-spacing:-.35px!important;}
+.exact-continuity-info th,.exact-continuity-info td{height:8.7mm!important;}
 
-/* إزالة أي أثر لون نازل أسفل رقم الهاتف أو الخلايا في التأجيل/الغياب/التخفيض/تأجيل الامتحان */
-.deferment-sheet .smart-top-info,
-.absence-sheet .smart-top-info,
-.evening-fees-sheet .smart-top-info,
-.gov-fees-sheet .smart-top-info,
-.exam-delay-sheet .smart-top-info{
-  overflow:hidden !important;
-  background:#fff !important;
-}
-.deferment-sheet .smart-top-info + .request-table,
-.absence-sheet .smart-top-info + .request-table,
-.evening-fees-sheet .smart-top-info + .request-table,
-.gov-fees-sheet .smart-top-info + .request-table,
-.exam-delay-sheet .smart-top-info + .request-table{
-  margin-top:1.2mm !important;
-}
+/* petition forms: readable body, student info separated, approval footer at side */
+.petition-v75 .petition-frame{min-height:274mm!important;padding:14mm 12mm 12mm!important;}
+.petition-v75 .petition-readable-body{max-width:78%!important;margin-right:auto!important;font-size:17.2px!important;line-height:2.05!important;}
+.petition-v75 .petition-readable-body p{margin-bottom:10px!important;}
+.petition-v75 .petition-student-info-v75{position:absolute!important;right:112mm!important;bottom:94mm!important;width:48mm!important;text-align:right!important;font-size:12.6px!important;line-height:1.55!important;font-weight:800!important;background:#fff!important;z-index:2!important;}
+.petition-v75 .petition-side-approvals-v75{left:10mm!important;right:10mm!important;bottom:10mm!important;gap:3mm!important;}
+.petition-v75 .petition-side-approvals-v75 .official-approval-box{position:relative!important;min-height:47mm!important;padding:4mm 4mm 4mm!important;display:block!important;text-align:right!important;}
+.petition-v75 .official-approval-title{font-size:14px!important;line-height:1.45!important;text-align:right!important;width:max-content!important;max-width:55%!important;margin-right:0!important;margin-left:auto!important;padding:0!important;}
+.petition-v75 .official-free-sign-area{height:22mm!important;margin:2mm 0 0!important;border-bottom:1.2px solid #777!important;}
+.petition-v75 .official-approval-footer{border-top:0!important;width:38mm!important;margin-right:auto!important;margin-left:0!important;text-align:center!important;font-size:12.4px!important;line-height:1.35!important;padding-top:1.5mm!important;}
 
-/* 2) ضغط استمارات اللجان حتى تبقى صفحة واحدة مع جدول علوي أوضح */
-.committee-sheet .request-cell{min-height:148px !important;padding:8px 10px 7px !important;}
-.committee-sheet .request-intro{font-size:12.4px !important;line-height:1.55 !important;margin-bottom:1.2mm !important;}
-.committee-sheet .fixed-three{min-height:60px !important;margin:0 !important;padding-right:18px !important;}
-.committee-sheet .fixed-three li{min-height:15px !important;line-height:1.3 !important;margin:0 0 1px !important;}
-.committee-sheet .request-sign-right{font-size:11.8px !important;line-height:1.45 !important;margin-top:2mm !important;width:45mm !important;}
-.committee-sheet .committee-undertaking{font-size:11.4px !important;line-height:1.38 !important;margin:1.2mm 0 !important;}
-.committee-sheet .review-stack-cell{min-height:22mm !important;padding:6px 8px !important;font-size:12.4px !important;}
-.committee-sheet .fee-merged-title{font-size:12px !important;padding:5px 8px !important;}
-.committee-sheet .fee-merged-body{min-height:22mm !important;}
-.committee-sheet .academic-reg-cell,
-.committee-sheet .finance-box{min-height:31mm !important;font-size:11.6px !important;padding:6px 7px !important;}
-.committee-sheet .dean-box-expanded{min-height:20mm !important;font-size:12.8px !important;padding:6px 8px !important;}
-.committee-sheet .council-box{min-height:23mm !important;font-size:12.2px !important;padding:6px 8px !important;}
-
-/* 3) براءة الذمة: تكبير مربعات الأقسام واستغلال الفراغ الأبيض */
-.exact-clearance-sheet{min-height:284mm !important;padding-bottom:1.5mm !important;}
-.exact-clearance-info th,.exact-clearance-info td{height:7.1mm !important;padding:1.4mm 1.6mm !important;}
-.exact-clearance-grid{
-  flex:1 1 auto !important;
-  min-height:198mm !important;
-  grid-template-rows:repeat(3, 1fr) !important;
-  gap:2.4mm !important;
-  margin-top:1.4mm !important;
-}
-.exact-clearance-grid .clear-box{
-  min-height:61mm !important;
-  padding:4mm 5mm 3.5mm !important;
-  border-radius:15px !important;
-}
-.exact-clearance-grid .clear-spacer{min-height:34mm !important;flex:1 1 auto !important;}
-.exact-clearance-sheet .clearance-bottom-note{margin-top:1.4mm !important;font-size:10.5px !important;}
-.exact-clearance-sheet .clearance-footer-strip{display:none !important;}
-
-/* 4) عودة/ترقين/عدم رسوب: عناوين التأييد بالطرف ومجال توقيع أكبر */
-.petition-official-approval-grid .official-approval-box{
-  min-height:50mm !important;
-  padding:3.5mm 5mm 3mm !important;
-  justify-content:space-between !important;
-}
-.petition-official-approval-grid .official-approval-title{
-  align-self:flex-start !important;
-  text-align:right !important;
-  width:auto !important;
-  max-width:70mm !important;
-  font-size:13.2px !important;
-  line-height:1.35 !important;
-  padding:0 !important;
-  margin:0 !important;
-}
-.petition-official-approval-grid .official-approval-footer{
-  margin-top:auto !important;
-  font-size:13.2px !important;
-  line-height:1.4 !important;
-  padding-top:2mm !important;
-}
-.petition-signature-block{bottom:88mm !important;font-size:13.2px !important;line-height:1.55 !important;}
-
-/* 5) الاستضافة: ضبط سطر من/إلى، ومنع نفس الدراسة، ومجال توقيع منظم */
-.hosting-line-transfer.hosting-transfer-box{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:2mm !important;
-  line-height:1.3 !important;
-  min-height:8mm !important;
-}
-.hosting-line-transfer.hosting-transfer-box .host-label,
-.hosting-line-transfer.hosting-transfer-box .host-study-fill{
-  line-height:1.3 !important;
-  vertical-align:middle !important;
-  position:static !important;
-  top:auto !important;
-  transform:none !important;
-}
-.hosting-review-grid-exact{grid-template-columns:1.25fr .9fr !important;gap:10px !important;}
-.hosting-sign-col-exact{
-  min-height:30mm !important;
-  padding-top:10mm !important;
-  display:flex !important;
-  flex-direction:column !important;
-  justify-content:flex-end !important;
-  gap:1.4mm !important;
-  line-height:1.35 !important;
-}
-.hosting-review-section-exact{margin-top:9px !important;padding-top:8px !important;}
-.hosting-review-final-exact{margin-top:2.5mm !important;padding-bottom:2mm !important;}
-.hosting-checkline-exact{margin:3px 0 !important;}
-
-/* 6) فحص ومعالجة: Landscape حقيقي واستغلال العرض */
-@media print{
-  @page{margin:5mm;}
-  body.print-mode-active.print-form-medicalCheck,
-  body.print-popup-onepage.print-form-medicalCheck{
-    width:287mm !important;
-    height:200mm !important;
-    min-width:287mm !important;
-    max-width:287mm !important;
-    min-height:200mm !important;
-    max-height:200mm !important;
-    overflow:hidden !important;
-  }
-  body.print-mode-active.print-form-medicalCheck #formPage,
-  body.print-mode-active.print-form-medicalCheck #printArea,
-  body.print-popup-onepage.print-form-medicalCheck #formPage,
-  body.print-popup-onepage.print-form-medicalCheck #printArea{
-    width:287mm !important;
-    height:200mm !important;
-    max-height:200mm !important;
-    margin:0 !important;
-    padding:0 !important;
-    overflow:hidden !important;
-  }
-  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-sheet,
-  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-sheet-v54,
-  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-sheet.medical-two-up-sheet-v54,
-  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-sheet,
-  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-sheet-v54,
-  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-sheet.medical-two-up-sheet-v54{
-    width:286mm !important;
-    min-width:286mm !important;
-    max-width:286mm !important;
-    height:198mm !important;
-    min-height:198mm !important;
-    max-height:198mm !important;
-    padding:3mm 3mm !important;
-    margin:0 auto !important;
-    overflow:hidden !important;
-  }
-  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-grid,
-  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-grid{
-    grid-template-columns:1fr 1fr !important;
-    gap:6mm !important;
-    width:100% !important;
-    height:100% !important;
-  }
-  body.print-mode-active.print-form-medicalCheck #formPage .medical-form-copy,
-  body.print-mode-active.print-form-medicalCheck #formPage .medical-form-copy-v54,
-  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-form-copy,
-  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-form-copy-v54{
-    width:100% !important;
-    height:100% !important;
-    min-height:0 !important;
-    padding:6mm 5mm 5mm !important;
-    box-sizing:border-box !important;
-    overflow:hidden !important;
-  }
-}
+/* hosting: aligned transfer line and student signature, no same/same look */
+.hosting-v75{font-size:16.4px!important;line-height:1.72!important;}
+.hosting-v75 .hosting-transfer-line-v75{display:flex!important;align-items:baseline!important;justify-content:center!important;gap:2.2mm!important;text-align:center!important;margin:3mm 0 2mm!important;line-height:1.5!important;}
+.hosting-v75 .hosting-transfer-line-v75 b{font-weight:900!important;display:inline-block!important;min-width:22mm!important;text-align:center!important;}
+.hosting-v75 .host-flow-line{line-height:1.65!important;margin:2.2mm 0!important;}
+.hosting-v75 .hosting-reasons-exact li{min-height:7mm!important;line-height:1.45!important;}
+.hosting-v75 .hosting-student-sign-v75{width:45mm!important;margin:8mm auto 6mm!important;font-size:13.2px!important;line-height:1.45!important;}
+.hosting-v75 .hosting-review-section-exact{margin-top:5mm!important;padding-top:3mm!important;}
+.hosting-v75 .hosting-review-grid-exact{grid-template-columns:1.28fr .86fr!important;gap:10mm!important;align-items:center!important;}
+.hosting-v75 .hosting-sign-col-exact{font-size:14px!important;line-height:1.5!important;padding-top:0!important;}
+.hosting-v75 .hosting-opinion-col-exact{font-size:14.4px!important;line-height:1.55!important;}
 
 @media print{
-  .smart-top-info.one-row-top-info th,
-  .smart-top-info.one-row-top-info td{height:6.6mm !important;max-height:6.6mm !important;padding:0.9mm 1mm !important;}
-  .smart-top-info.one-row-top-info th{font-size:8.7px !important;}
-  .smart-top-info.one-row-top-info td{font-size:8.6px !important;}
-  .smart-top-info.one-row-top-info .top-name-cell .fit-student{font-size:8.1px !important;}
-  .smart-top-info.one-row-top-info .top-dept-cell .fit-department{font-size:7.1px !important;}
-  .smart-top-info.one-row-top-info .top-phone-cell .fit-phone{font-size:8.2px !important;}
-  .exact-clearance-grid .clear-box{min-height:60mm !important;}
-  .exact-clearance-grid .clear-spacer{min-height:32mm !important;}
+  .balanced-top-info th,.balanced-top-info td{height:7.1mm!important;padding:.9mm 1mm!important;}
+  .balanced-top-info th{font-size:8.4px!important}.balanced-top-info td{font-size:9.4px!important}
+  .petition-v75 .petition-student-info-v75{bottom:94mm!important;}
+  .petition-v75 .petition-side-approvals-v75 .official-approval-box{min-height:46mm!important;}
+  .hosting-v75 .hosting-transfer-line-v75{margin-top:2.5mm!important;}
 }
-

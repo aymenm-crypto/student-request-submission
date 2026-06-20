@@ -375,18 +375,6 @@ function updateDependentFields(){
   const form = activeForm;
   const main = $('mainForm');
   if (!form || !main) return;
-  if (form.id === 'hosting') {
-    const fromEl = main.elements['fromStudy'];
-    const toEl = main.elements['toStudy'];
-    if (fromEl && toEl) {
-      const fromVal = normalizeStudy(fromEl.value);
-      const toVal = normalizeStudy(toEl.value);
-      if (fromVal && toVal && fromVal === toVal) {
-        toEl.value = fromVal === 'الدراسة الصباحية' ? 'المسائية' : 'الصباحية';
-      }
-    }
-    return;
-  }
   if (form.id !== 'deferment') return;
   const scopeEl = main.elements['deferScope'];
   const semEl = main.elements['semester'];
@@ -533,15 +521,6 @@ function getFormData(){
   const data = Object.fromEntries(fd.entries());
   (activeForm?.fields || []).forEach(([key]) => { if (!(key in data)) data[key] = ''; });
   ['studyType','studyShift','fromStudy','toStudy'].forEach(k => { if (k in data) data[k] = normalizeStudy(data[k]); });
-  if (activeForm && activeForm.id === 'hosting') {
-    // الاستضافة لا تقبل صباحي→صباحي أو مسائي→مسائي.
-    // إذا اختار الطالب نفس الدراسة بالخطأ، نحول الوجهة تلقائياً إلى المقابلة.
-    if (data.fromStudy && data.toStudy && data.fromStudy === data.toStudy) {
-      data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
-    }
-    if (data.fromStudy && !data.toStudy) data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
-    if (!data.fromStudy && data.toStudy) data.fromStudy = data.toStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
-  }
   if (activeForm?.printType === 'continuity') {
     data.destination = data.directedTo || '';
     data.purposeReason = data.purpose || '';
@@ -616,25 +595,15 @@ function hostHeader(){
     <div class="host-separator"></div>`;
 }
 function topInfoRow(cells){
-  // FINAL: one balanced information row for all committee-style forms.
-  // This removes the empty/colored lower cells that appeared under الهاتف in deferment/absence/exam-delay.
-  const normalized = (cells || []).filter(Boolean);
-  const count = normalized.length;
-  const widths5 = ['8%','19%','7%','20%','7%','13%','6%','8%','7%','5%'];
-  const widths4 = ['9%','25%','8%','24%','8%','16%','6%','4%'];
-  const widths = count >= 5 ? widths5 : widths4;
-  const colgroup = '<colgroup>' + widths.map(w => `<col style="width:${w}">`).join('') + '</colgroup>';
-  let rowHtml = normalized.map((cell, idx) => {
-    const key = String(cell[0] || '');
-    let cls = '';
-    if (key.includes('اسم')) cls = ' top-name-cell';
-    if (key.includes('قسم') || key.includes('القسم')) cls = ' top-dept-cell';
-    if (key.includes('هاتف')) cls = ' top-phone-cell';
-    if (key.includes('مرحلة')) cls = ' top-stage-cell';
-    if (key.includes('دراسة')) cls = ' top-study-cell';
-    return `<th class="top-label-${idx}">${escapeHtml(key)}</th><td class="top-value-${idx}${cls}">${cell[1]}</td>`;
+  const chunks = [];
+  const perRow = cells.length > 4 ? 3 : cells.length;
+  for (let i = 0; i < cells.length; i += perRow) chunks.push(cells.slice(i, i + perRow));
+  const rows = chunks.map(row => {
+    let html = row.map(cell => `<th>${escapeHtml(cell[0])}</th><td>${cell[1]}</td>`).join('');
+    while (row.length < perRow) { html += '<th class="blank-cell">&nbsp;</th><td class="blank-cell">&nbsp;</td>'; row.push(['','']); }
+    return `<tr>${html}</tr>`;
   }).join('');
-  return `<table class="outline-table top-info-row smart-top-info one-row-top-info topinfo-${count}">${colgroup}<tr>${rowHtml}</tr></table>`;
+  return `<table class="outline-table top-info-row smart-top-info">${rows}</table>`;
 }
 function reasonsListHtml(data){
   return `<ol class="reason-list fixed-three">${reasonValues(data).map(v => `<li>${v}</li>`).join('')}</ol>`;
@@ -4957,11 +4926,6 @@ function setupServerBindings(){
         (activeForm.fields || []).forEach(function(item){ var key = item[0]; if (!(key in data)) data[key] = ''; });
       }
       ['studyType','studyShift','fromStudy','toStudy'].forEach(function(k){ if (k in data && typeof normalizeStudy === 'function') data[k] = normalizeStudy(data[k]); });
-      if (activeForm && activeForm.id === 'hosting') {
-        if (data.fromStudy && data.toStudy && data.fromStudy === data.toStudy) data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
-        if (data.fromStudy && !data.toStudy) data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
-        if (!data.fromStudy && data.toStudy) data.fromStudy = data.toStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
-      }
       if (typeof activeForm !== 'undefined' && activeForm && activeForm.printType === 'continuity') {
         data.destination = data.directedTo || '';
         data.purposeReason = data.purpose || '';
@@ -5338,4 +5302,166 @@ function setupServerBindings(){
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rehookPrintButton);
   else rehookPrintButton();
+})();
+
+
+/* =========================================================
+   V75 REAL PRINT PATCH - unified two-row info, petition sides,
+   hosting transfer sanity, no overlapping info cells.
+   ========================================================= */
+(function(){
+  function safe(v){ return (typeof escapeHtml === 'function') ? escapeHtml(v) : String(v == null ? '' : v); }
+  function oppositeStudy(v){
+    var s = String(v || '').trim();
+    if (s.indexOf('مسائي') > -1 || s === 'المسائية') return 'الصباحية';
+    return 'المسائية';
+  }
+  function normalizeStudyWord(v){
+    var s = String(v || '').trim();
+    if (!s) return '';
+    if (s.indexOf('مسائي') > -1) return 'المسائية';
+    if (s.indexOf('صباح') > -1) return 'الصباحية';
+    return s;
+  }
+
+  // Force top information tables to be 2 rows max with 3 pairs per row.
+  window.topInfoRow = topInfoRow = function(cells){
+    cells = Array.isArray(cells) ? cells.filter(Boolean) : [];
+    var perRow = 3;
+    var chunks = [];
+    for (var i = 0; i < cells.length; i += perRow) chunks.push(cells.slice(i, i + perRow));
+    var rows = chunks.map(function(row){
+      var html = row.map(function(cell){
+        var label = cell && cell[0] != null ? cell[0] : '';
+        var value = cell && cell[1] != null ? cell[1] : '';
+        return '<th class="top-info-label">' + safe(label) + '</th><td class="top-info-value">' + value + '</td>';
+      }).join('');
+      while (row.length < perRow) { html += '<th class="blank-cell">&nbsp;</th><td class="blank-cell">&nbsp;</td>'; row.push(['','']); }
+      return '<tr>' + html + '</tr>';
+    }).join('');
+    return '<table class="outline-table top-info-row smart-top-info balanced-top-info">' + rows + '</table>';
+  };
+
+  // Committee/deferment/fees/absence/exam: use balanced two-line header info.
+  window.renderCommitteeBody = renderCommitteeBody = function(form, data, opts){
+    opts = opts || {};
+    var intro = opts.intro || '';
+    var includeStudyType = opts.includeStudyType !== false;
+    var studyLabel = opts.studyLabel || 'نوع الدراسة';
+    var regOptions = opts.regOptions || [];
+    var feeNote = opts.feeNote || 'تسديد الأجور لطلبة الدراسة المسائية والموازي :';
+    var undertakingLine = opts.undertakingLine || '';
+    var extraAfterReasons = opts.extraAfterReasons || '';
+    var showFeeBox = opts.showFeeBox !== false;
+    var showAcademicFinanceBoxes = opts.showAcademicFinanceBoxes !== false;
+    var deanLabel = opts.deanLabel || 'توصية السيد العميد المحترم:';
+    var sheetClass = ['committee-sheet', opts.sheetClass || ''].join(' ').trim();
+    var cleanStudyLabel = String(studyLabel || 'نوع الدراسة').replace(/[/:،]+\s*$/g, '').trim() || 'نوع الدراسة';
+    var topCells = [
+      ['اسم الطالب الرباعي', fitStudent(data.studentName)],
+      ['القسم', fitDepartment(data.department)],
+      ['رقم الهاتف', fitPhone(data.phone)],
+      ['المرحلة', fitShort(data.stage)]
+    ];
+    if (includeStudyType) topCells.push([cleanStudyLabel, fitShort(studyAdjective(data.studyType))]);
+    if (data && data.academicYear) topCells.push(['السنة', fitShort(displayYear(data.academicYear))]);
+    return '<article class="paper official-paper form-sheet ' + sheetClass + '">' +
+      ministryHeader(form.title, opts.headerClass || '') +
+      topInfoRow(topCells) +
+      '<table class="outline-table request-table"><tr><td class="request-cell">' +
+        '<div class="request-intro">' + intro + '</div>' +
+        reasonsListHtml(data) + extraAfterReasons +
+        (undertakingLine ? '<div class="undertaking-line committee-undertaking">' + undertakingLine + '</div>' : '') +
+        '<div class="request-sign-right">التوقيع :<br>الاسم : ' + fitStudent(data.studentName) + '<br>التاريخ : ' + currentArabicDate() + '</div>' +
+      '</td></tr></table>' +
+      '<div class="outline-box review-stack-box"><div class="review-stack-cell">رأي لجنة الإرشاد في القسم</div><div class="review-stack-cell">هامش السيد رئيس القسم</div></div>' +
+      (showFeeBox ? '<div class="outline-box fee-merged-box"><div class="fee-merged-title">' + feeNote + '</div><div class="fee-merged-body"><div class="fee-options-stack merged-options"><div class="fee-option">' + squareMark(false, true) + ' سدد</div><div class="fee-option">' + squareMark(false, true) + ' لم يسدد</div></div><div class="fee-row-receipt merged-receipt">بالوصل المرقم/</div></div></div>' : '') +
+      (showAcademicFinanceBoxes ? '<div class="committee-lower-grid"><div class="outline-box academic-reg-box"><div class="academic-reg-cell strip-study">السيرة الدراسية للطالب<ul class="bullet-lines"><li></li><li></li><li></li><li></li></ul></div><div class="academic-reg-cell strip-reg">تأييد شعبة التسجيل وشؤون الطلبة<span class="keep-with-next"> في الكلية</span>' + (regOptions.length ? '<div class="reg-options">' + regOptions.map(function(v){return '<div>' + squareMark(false, true) + ' ' + safe(v) + '</div>';}).join('') + '</div>' : '') + '</div></div><div class="outline-box finance-box">تأييد شعبة الشؤون المالية في الكلية</div></div>' : '') +
+      '<div class="outline-box mid-box dean-box-expanded">' + deanLabel + '</div>' +
+      '<div class="outline-box council-box"><div class="council-line">رأي مجلس الكلية الموقر:</div><div class="council-meta"><span>القرار</span><span>رقم الجلسة:</span><span>تاريخ الجلسة</span></div></div>' +
+    '</article>';
+  };
+
+  window.renderCommitteeForm = renderCommitteeForm = function(form, data){
+    var intro = '', includeStudyType = true, studyLabel = 'نوع الدراسة', sheetClass = '';
+    if (form.id === 'examDelay') {
+      var courseLabel = courseLabelForPrint(data);
+      var courseText = String(data.courseName || '').trim();
+      var coursePart = courseText ? courseLabel + ' (' + courseNameForPrint(data) + ')' : courseLabel;
+      intro = 'يرجى تفضلكم بالموافقة على طلب تأجيل امتحان ' + coursePart + ' للسنة الدراسية (' + displayYear(data.academicYear) + ') وذلك للأسباب التالية:';
+      studyLabel = 'نظام الدراسة'; sheetClass = 'exam-delay-sheet deferment-header-like';
+    } else if (form.id === 'eveningFees') {
+      intro = 'يرجى تفضلكم بالموافقة على طلب تخفيض أجور الدراسة المسائية للسنة الدراسية (' + displayYear(data.academicYear) + ') وذلك للأسباب التالية:';
+      sheetClass = 'evening-fees-sheet deferment-header-like';
+    } else if (form.id === 'govFees') {
+      intro = 'يرجى تفضلكم بالموافقة على طلب تخفيض أجور التعليم الحكومي الخاص (الموازي) للسنة الدراسية (' + displayYear(data.academicYear) + ') وذلك للأسباب التالية:';
+      sheetClass = 'gov-fees-sheet deferment-header-like';
+    } else {
+      intro = safe(form.template || 'يرجى تفضلكم بالموافقة على الطلب وذلك للأسباب التالية:');
+    }
+    var headerClass = (form.id === 'eveningFees' || form.id === 'govFees' || form.id === 'examDelay') ? 'centered-ministry' : '';
+    return renderCommitteeBody(form, data, { intro: intro, includeStudyType: includeStudyType, studyLabel: studyLabel, headerClass: headerClass, sheetClass: sheetClass });
+  };
+
+  // Petition forms: move official titles/footer to the side and keep body data readable.
+  window.renderPetitionForm = renderPetitionForm = function(form, data){
+    var kind = form.petitionKind;
+    var student = displayValue(data.studentName);
+    var dept = displayValue(data.department);
+    var stage = displayValue(data.stage);
+    var study = displayStudyValue(data.studyType);
+    var phone = displayValue(data.phone);
+    return '<article class="paper petition-paper form-sheet petition-sheet petition-v75"><div class="petition-frame">' +
+      '<div class="corner corner-tr"></div><div class="corner corner-tl"></div><div class="corner corner-br"></div><div class="corner corner-bl"></div>' +
+      '<div class="petition-topline">الى / السيد معاون العميد للشؤون العلمية المحترم ...</div>' +
+      '<div class="petition-topline">بواسطة / السيد مدير شعبة التسجيل والشؤون الطلابية المحترم ...</div>' +
+      '<div class="petition-mark">م/ ' + safe(petitionSubject(kind)) + '</div>' +
+      '<div class="petition-body petition-readable-body"><div class="petition-greeting">تحية طيبة ....</div>' +
+        '<p>إني الطالب / (' + student + ') والمقبول في كليتكم الموقرة / قسم (' + dept + ') المرحلة (' + stage + ') الدراسة (' + study + ') والمقبول في العام الدراسي (' + displayYear(data.academicYear) + ').</p>' +
+        '<p>ارجو تفضلكم بالموافقة على (' + safe(petitionVerb(kind)) + ') وذلك بسبب (' + displayValue(data.petitionReason) + ').</p>' +
+        '<p class="petition-thanks">ولكم الأمر ... مع فائق الشكر والاحترام</p></div>' +
+      '<div class="petition-signature-block petition-student-info-v75">التوقيع:<br>الاسم: ' + student + '<br>القسم: ' + dept + '<br>المرحلة: ' + stage + '<br>الدراسة: ' + study + '<br>رقم الهاتف: ' + phone + '<br>التاريخ: ' + currentArabicDate() + '</div>' +
+      '<div class="official-approval-grid petition-official-approval-grid petition-side-approvals-v75">' +
+        '<div class="official-approval-box official-approval-right"><div class="official-approval-title">تأييد رئيس القسم المختص وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>رئيس القسم</div><div class="petition-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div>' +
+        '<div class="official-approval-box official-approval-left"><div class="official-approval-title">تأييد مدير التسجيل وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>مدير التسجيل</div><div class="petition-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div>' +
+      '</div></div></article>';
+  };
+
+  // Hosting: never same/same; align transfer line and student signature.
+  window.renderHostingForm = renderHostingForm = function(form, data){
+    var fromStudy = normalizeStudyWord(data.fromStudy || data.studyType || 'الصباحية');
+    var toStudy = normalizeStudyWord(data.toStudy || oppositeStudy(fromStudy));
+    if (fromStudy && toStudy && fromStudy === toStudy) toStudy = oppositeStudy(fromStudy);
+    var fill = hostingFillValue;
+    var reasons = ['reason1','reason2','reason3'].map(function(k){return fill(data[k]);});
+    return '<article class="paper official-paper form-sheet hosting-sheet hosting-sheet-exact hosting-v75">' +
+      '<div class="hosting-top-exact"><div class="hosting-logos-exact"><div class="hosting-logo-exact hosting-logo-college-exact">' + clearanceLogoHtml(runtimeClearanceCollegeLogoSrc || clearanceCollegeLogoSrc,'hosting-college-logo') + '</div><div class="hosting-logo-exact hosting-logo-university-exact">' + clearanceLogoHtml(runtimeClearanceUniversityLogoSrc || clearanceUniversityLogoSrc,'hosting-university-logo') + '</div></div><div class="hosting-title-exact"><div>جامعة كربلاء- كلية الهندسة</div><div>شعبة الشؤون الطلابية والتسجيل</div><div class="hosting-title-main-exact">استمارة استضافة</div></div></div>' +
+      '<div class="hosting-rule-exact"></div>' +
+      '<div class="hosting-body-exact hosting-body-v75">' +
+        '<div class="hosting-line-exact hosting-transfer-line-v75"><span>استضافة من الدراسة</span><b>(' + safe(studyAdjective(fromStudy)) + ')</b><span>إلى الدراسة</span><b>(' + safe(studyAdjective(toStudy)) + ')</b></div>' +
+        '<div class="hosting-line-exact hosting-line-student host-flow-line"><span class="host-label">إني الطالب/ة</span> <span class="host-inline-fill host-inline-fill-paren host-student-fill">(' + displayValue(data.studentName) + ')</span> <span class="host-label">أحد طلبة قسم</span> <span class="host-inline-fill host-inline-fill-paren host-inline-fill-department">(' + displayValue(data.department) + ')</span> <span class="host-label">المرحلة</span> <span class="host-inline-fill host-inline-fill-paren host-stage-fill">(' + displayValue(data.stage) + ')</span></div>' +
+        '<div class="hosting-line-exact hosting-line-request host-flow-line"><span class="host-label">الدراسة</span> <span class="host-inline-fill host-inline-fill-paren host-study-fill">(' + safe(studyAdjective(fromStudy)) + ')</span> <span class="host-label">أروم الاستضافة إلى الدراسة</span> <span class="host-inline-fill host-inline-fill-paren host-study-fill">(' + safe(studyAdjective(toStudy)) + ')</span></div>' +
+        '<div class="hosting-reasons-label-exact">وذلك للأسباب التالية:-</div><ol class="hosting-reasons-exact">' + reasons.map(function(v){return '<li>' + v + '</li>';}).join('') + '</ol>' +
+      '</div>' +
+      '<div class="hosting-student-sign-exact hosting-student-sign-v75"><div>اسم الطالب وتوقيعه</div><div class="hosting-phone-exact">رقم الهاتف: ' + fitPhone(data.phone) + '</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div>' +
+      '<section class="hosting-review-section-exact"><div class="hosting-review-title-exact">رأي القسم العلمي</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">' + squareMark(false) + '<span>أوافق على الطلب لوجود طاقة استيعابية.</span></div><div class="hosting-checkline-exact">' + squareMark(false) + '<span>لا أوافق على الطلب لعدم وجود طاقة استيعابية.</span></div></div><div class="hosting-sign-col-exact"><div>رئيس القسم</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section>' +
+      '<section class="hosting-review-section-exact"><div class="hosting-review-title-exact">رأي السيد عميد الكلية المحترم</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">' + squareMark(false) + '<span>لا مانع لدينا ونوصي السيد رئيس الجامعة المحترم بالموافقة على الاستضافة.</span></div><div class="hosting-checkline-exact">' + squareMark(false) + '<span>لا أوافق على رفع الطلب لعدم توفر الشروط.</span></div></div><div class="hosting-sign-col-exact"><div>أ.د.حيدر ناظم عزيز المحنة</div><div>العميد</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section>' +
+      '<section class="hosting-review-section-exact hosting-review-final-exact"><div class="hosting-review-title-exact">رأي السيد رئيس الجامعة المحترم</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">' + squareMark(false) + '<span>أوافق على الاستضافة.</span></div><div class="hosting-checkline-exact">' + squareMark(false) + '<span>لا أوافق على الاستضافة.</span></div></div><div class="hosting-sign-col-exact"><div>أ.د.صباح واجد علي</div><div>رئيس الجامعة</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section>' +
+    '</article>';
+  };
+
+  // UI helper: when selecting hosting same study, switch destination automatically.
+  document.addEventListener('change', function(e){
+    var t = e.target;
+    if (!t || !t.name) return;
+    if (t.name === 'fromStudy' || t.name === 'toStudy') {
+      var from = document.querySelector('[name="fromStudy"]');
+      var to = document.querySelector('[name="toStudy"]');
+      if (from && to && from.value && to.value && normalizeStudyWord(from.value) === normalizeStudyWord(to.value)) {
+        if (t.name === 'fromStudy') to.value = oppositeStudy(from.value);
+        else from.value = oppositeStudy(to.value);
+        if (typeof syncPreview === 'function') setTimeout(syncPreview, 0);
+      }
+    }
+  }, true);
 })();
