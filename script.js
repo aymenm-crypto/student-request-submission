@@ -5465,3 +5465,169 @@ function setupServerBindings(){
     }
   }, true);
 })();
+
+/* =========================================================
+   V76 final targeted patch
+   - desktop = print
+   - mobile = PDF download via html2pdf
+   - clean targeted templates without touching unrelated forms
+   ========================================================= */
+(function(){
+  function safe(v){ return (typeof escapeHtml === 'function') ? escapeHtml(v) : String(v == null ? '' : v); }
+  function val(v){ return (typeof displayValue === 'function') ? displayValue(v) : safe(v || ''); }
+  function isMobileV76(){
+    var ua = navigator.userAgent || '';
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || ((navigator.maxTouchPoints||0)>1 && /Macintosh/i.test(ua)) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches && window.innerWidth < 1200);
+  }
+  function loadScriptV76(src){
+    return new Promise(function(resolve,reject){
+      if (window.html2pdf) return resolve();
+      var old = document.querySelector('script[data-v76-html2pdf="1"]');
+      if (old) { old.addEventListener('load', resolve); old.addEventListener('error', reject); return; }
+      var s = document.createElement('script');
+      s.src = src; s.async = true; s.dataset.v76Html2pdf = '1';
+      s.onload = resolve; s.onerror = function(){ reject(new Error('تعذر تحميل مكتبة PDF.')); };
+      document.head.appendChild(s);
+    });
+  }
+  function formClassV76(){ return activeForm && activeForm.id ? 'print-form-' + activeForm.id : ''; }
+  function isLandscapeV76(){ return !!(activeForm && activeForm.pageOrientation === 'landscape'); }
+  function requestFileNameV76(){
+    var no = (typeof lastSavedRequestNo !== 'undefined' && lastSavedRequestNo) ? lastSavedRequestNo : 'student-request';
+    try { var rn = document.getElementById('requestNumber'); if (rn && rn.textContent.trim()) no = rn.textContent.trim(); } catch(e) {}
+    return String(no).replace(/[\\/:*?"<>|\s]+/g,'_') + '.pdf';
+  }
+  async function downloadMobilePdfV76(){
+    if (typeof syncPreview === 'function') syncPreview();
+    if (typeof applyAutoFit === 'function') applyAutoFit(document.getElementById('printArea') || document);
+    await loadScriptV76('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+    var printArea = document.getElementById('printArea');
+    if (!printArea || !printArea.innerHTML.trim()) throw new Error('لا توجد استمارة جاهزة.');
+    var holder = document.createElement('div');
+    holder.className = 'pdf-export-holder print-mode-active ' + formClassV76();
+    var w = isLandscapeV76() ? '297mm' : '210mm';
+    var h = isLandscapeV76() ? '210mm' : '297mm';
+    holder.style.width = w; holder.style.minHeight = h;
+    holder.innerHTML = '<div id="formPage"><div id="printArea">' + printArea.innerHTML + '</div></div>';
+    document.body.classList.add('pdf-render-mode','print-mode-active');
+    if (formClassV76()) document.body.classList.add(formClassV76());
+    document.body.appendChild(holder);
+    try {
+      var opt = {
+        margin: 0,
+        filename: requestFileNameV76(),
+        image: { type:'jpeg', quality:0.98 },
+        html2canvas: { scale:2, useCORS:true, allowTaint:true, backgroundColor:'#ffffff', logging:false },
+        jsPDF: { unit:'mm', format:'a4', orientation: isLandscapeV76() ? 'landscape' : 'portrait', compress:true },
+        pagebreak: { mode:['avoid-all','css','legacy'] }
+      };
+      await window.html2pdf().set(opt).from(holder).save();
+    } finally {
+      try { holder.remove(); } catch(e) {}
+      document.body.classList.remove('pdf-render-mode','print-mode-active');
+      if (formClassV76()) document.body.classList.remove(formClassV76());
+    }
+  }
+
+  function stagesForPrintV76(data){
+    try { return stagesForDepartment(data && data.department); } catch(e) {
+      var d = String(data && data.department || '').trim();
+      return (d === 'هندسة العمارة' || d === 'هندسة الطب حياتي') ? ['الأولى','الثانية','الثالثة','الرابعة','الخامسة'] : ['الأولى','الثانية','الثالثة','الرابعة'];
+    }
+  }
+  window.renderStageOptions = renderStageOptions = function(data, extraClass){
+    var arr = stagesForPrintV76(data);
+    return arr.map(function(v){ return '<span class="stage-print-option '+(extraClass||'')+'">' + squareMark(data && data.stage===v) + '<span>' + safe(v) + '</span></span>'; }).join('');
+  };
+
+  window.topInfoRow = topInfoRow = function(cells){
+    cells = Array.isArray(cells) ? cells.filter(Boolean) : [];
+    var perRow = 3;
+    var rows = [];
+    for (var i=0;i<cells.length;i+=perRow) rows.push(cells.slice(i,i+perRow));
+    var body = rows.map(function(row){
+      var html = row.map(function(cell){ return '<th class="top-info-label">' + safe(cell[0]) + '</th><td class="top-info-value">' + (cell[1] || '') + '</td>'; }).join('');
+      while(row.length < perRow){ html += '<th class="blank-cell">&nbsp;</th><td class="blank-cell">&nbsp;</td>'; row.push(['','']); }
+      return '<tr>' + html + '</tr>';
+    }).join('');
+    return '<table class="outline-table top-info-row smart-top-info balanced-top-info-v76"><colgroup><col><col><col><col><col><col></colgroup>' + body + '</table>';
+  };
+
+  window.renderContinuityForm = renderContinuityForm = function(form, data){
+    var study = normalizeStudy(data.studyType);
+    var headerBlock = '<div class="clearance-head exact-clearance-head exact-continuity-head">' +
+      '<div class="clearance-logo clearance-logo-college">' + clearanceLogoHtml(runtimeClearanceCollegeLogoSrc,'clearance-college-logo') + '</div>' +
+      '<div class="clearance-ministry exact-clearance-ministry exact-continuity-ministry"><div>وزارة التعليم العالي والبحث العلمي</div><div>جامعة كربلاء – كلية الهندسة</div><div>قسم ' + fitDepartment(data.department) + '</div></div>' +
+      '<div class="clearance-logo clearance-logo-university">' + clearanceLogoHtml(runtimeClearanceUniversityLogoSrc,'clearance-university-logo') + '</div></div>' +
+      '<div class="clearance-title exact-clearance-title exact-continuity-title">استمارة طلب تأييد استمرار بالدوام للعام ' + displayYearRange(data.academicYear) + '</div>';
+    var infoTable = '<table class="outline-table clearance-info exact-clearance-info exact-continuity-info continuity-first-info"><colgroup><col class="continuity-label-col"><col class="continuity-value-col"><col class="continuity-label-col"><col class="continuity-wide-col"></colgroup>'+
+      '<tr><th>اسم الطالب/ة</th><td class="continuity-name-cell">'+fitStudent(data.studentName)+'</td><th>الدراسة</th><td class="option-row continuity-study-cell">'+squareMark(study==='الدراسة الصباحية')+' الصباحية '+squareMark(study==='الدراسة المسائية')+' المسائية</td></tr>'+
+      '<tr><th>القسم العلمي</th><td class="continuity-department-cell">'+fitDepartment(data.department)+'</td><th>المرحلة</th><td class="option-row continuity-stage-cell">'+renderStageOptions(data,'continuity-stage-opt')+'</td></tr>'+
+      '<tr><th>رقم الهاتف</th><td class="continuity-phone-cell">'+fitPhone(data.phone)+'</td><th>توقيع الطالب</th><td class="continuity-signature-cell"></td></tr></table>';
+    var secondPage = '<div class="clearance-grid exact-clearance-grid exact-continuity-grid rtl-two continuity-second-grid">'+
+      '<div class="clear-box continuity-request-box compact-continuity-box"><div class="continuity-box-text continuity-inline-text">يرجى تفضلكم بالموافقة على منحي تأييد استمرارية بالدوام معنون إلى: <span class="continuity-inline-value">'+val(data.destination || form.directedTo)+'</span></div></div>'+
+      '<div class="clear-box continuity-purpose-box compact-continuity-box"><div class="continuity-box-text continuity-inline-text">وذلك لغرض: <span class="continuity-inline-value">'+val(data.purposeReason || form.purpose)+'</span></div></div>'+
+      '<div class="clear-box continuity-approval-pair-wrap"><div class="official-approval-grid continuity-official-approval-grid"><div class="official-approval-box official-approval-right"><div class="official-approval-title">تأييد رئيس القسم المختص وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>رئيس القسم</div><div class="petition-admin-date continuity-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div><div class="official-approval-box official-approval-left"><div class="official-approval-title">تأييد مدير التسجيل وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>مدير التسجيل</div><div class="petition-admin-date continuity-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div></div></div></div>';
+    return '<article class="paper official-paper form-sheet continuity-paper exact-clearance-sheet exact-continuity-sheet continuity-onepage">'+headerBlock+infoTable+secondPage+'</article>';
+  };
+
+  window.renderCommitteeBody = renderCommitteeBody = function(form, data, opts){
+    opts = opts || {};
+    var intro = opts.intro || '';
+    var includeStudyType = opts.includeStudyType !== false;
+    var studyLabel = String(opts.studyLabel || 'نوع الدراسة').replace(/[/:،]+\s*$/g,'').trim() || 'نوع الدراسة';
+    var regOptions = opts.regOptions || [];
+    var feeNote = opts.feeNote || 'تسديد الأجور لطلبة الدراسة المسائية والموازي :';
+    var undertakingLine = opts.undertakingLine || '';
+    var extraAfterReasons = opts.extraAfterReasons || '';
+    var showFeeBox = opts.showFeeBox !== false;
+    var showAcademicFinanceBoxes = opts.showAcademicFinanceBoxes !== false;
+    var deanLabel = opts.deanLabel || 'توصية السيد العميد المحترم:';
+    var sheetClass = ['committee-sheet','committee-v76',opts.sheetClass||''].join(' ').trim();
+    var topCells = [ ['اسم الطالب الرباعي',fitStudent(data.studentName)], ['القسم',fitDepartment(data.department)], ['رقم الهاتف',fitPhone(data.phone)], ['المرحلة',fitShort(data.stage)] ];
+    if (includeStudyType) topCells.push([studyLabel, fitShort(studyAdjective(data.studyType))]);
+    if (data && data.academicYear) topCells.push(['السنة', fitShort(displayYear(data.academicYear))]);
+    return '<article class="paper official-paper form-sheet '+sheetClass+'">' + ministryHeader(form.title, opts.headerClass || '') + topInfoRow(topCells) +
+      '<table class="outline-table request-table"><tr><td class="request-cell"><div class="request-intro">'+intro+'</div>'+reasonsListHtml(data)+extraAfterReasons+(undertakingLine?'<div class="undertaking-line committee-undertaking">'+undertakingLine+'</div>':'')+'<div class="request-sign-right">التوقيع :<br>الاسم : '+fitStudent(data.studentName)+'<br>التاريخ : '+currentArabicDate()+'</div></td></tr></table>'+
+      '<div class="outline-box review-stack-box"><div class="review-stack-cell">رأي لجنة الإرشاد في القسم</div><div class="review-stack-cell">هامش السيد رئيس القسم</div></div>'+
+      (showFeeBox?'<div class="outline-box fee-merged-box"><div class="fee-merged-title">'+feeNote+'</div><div class="fee-merged-body"><div class="fee-options-stack merged-options"><div class="fee-option">'+squareMark(false,true)+' سدد</div><div class="fee-option">'+squareMark(false,true)+' لم يسدد</div></div><div class="fee-row-receipt merged-receipt">بالوصل المرقم/</div></div></div>':'')+
+      (showAcademicFinanceBoxes?'<div class="committee-lower-grid"><div class="outline-box academic-reg-box"><div class="academic-reg-cell strip-study">السيرة الدراسية للطالب<ul class="bullet-lines"><li></li><li></li><li></li><li></li></ul></div><div class="academic-reg-cell strip-reg">تأييد شعبة التسجيل وشؤون الطلبة<span class="keep-with-next"> في الكلية</span>'+(regOptions.length?'<div class="reg-options">'+regOptions.map(function(v){return '<div>'+squareMark(false,true)+' '+safe(v)+'</div>';}).join('')+'</div>':'')+'</div></div><div class="outline-box finance-box">تأييد شعبة الشؤون المالية في الكلية</div></div>':'')+
+      '<div class="outline-box mid-box dean-box-expanded">'+deanLabel+'</div><div class="outline-box council-box"><div class="council-line">رأي مجلس الكلية الموقر:</div><div class="council-meta"><span>القرار</span><span>رقم الجلسة:</span><span>تاريخ الجلسة</span></div></div></article>';
+  };
+
+  window.renderPetitionForm = renderPetitionForm = function(form, data){
+    var kind=form.petitionKind, student=val(data.studentName), dept=val(data.department), stage=val(data.stage), study=displayStudyValue(data.studyType), phone=val(data.phone);
+    return '<article class="paper petition-paper form-sheet petition-sheet petition-v76"><div class="petition-frame"><div class="corner corner-tr"></div><div class="corner corner-tl"></div><div class="corner corner-br"></div><div class="corner corner-bl"></div><div class="petition-topline">الى / السيد معاون العميد للشؤون العلمية المحترم ...</div><div class="petition-topline">بواسطة / السيد مدير شعبة التسجيل والشؤون الطلابية المحترم ...</div><div class="petition-mark">م/ '+safe(petitionSubject(kind))+'</div><div class="petition-body"><div class="petition-greeting">تحية طيبة ....</div><p>إني الطالب / ('+student+') والمقبول في كليتكم الموقرة / قسم ('+dept+') المرحلة ('+stage+') الدراسة ('+study+') والمقبول في العام الدراسي ('+displayYear(data.academicYear)+').</p><p>ارجو تفضلكم بالموافقة على ('+safe(petitionVerb(kind))+') وذلك بسبب ('+val(data.petitionReason)+').</p><p class="petition-thanks">ولكم الأمر ... مع فائق الشكر والاحترام</p></div><div class="petition-student-signline-v76">التوقيع:<br>الاسم: '+student+'<br>القسم: '+dept+'<br>المرحلة: '+stage+'<br>الدراسة: '+study+'<br>رقم الهاتف: '+phone+'<br>التاريخ: '+currentArabicDate()+'</div><div class="official-approval-grid petition-official-approval-grid petition-side-approvals-v76"><div class="official-approval-box official-approval-right"><div class="official-approval-title">تأييد رئيس القسم المختص وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>رئيس القسم</div><div class="petition-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div><div class="official-approval-box official-approval-left"><div class="official-approval-title">تأييد مدير التسجيل وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>مدير التسجيل</div><div class="petition-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div></div></div></article>';
+  };
+
+  window.renderHostingForm = renderHostingForm = function(form, data){
+    var fromStudy=normalizeStudyWord(data.fromStudy||data.studyType||'الصباحية'), toStudy=normalizeStudyWord(data.toStudy||oppositeStudy(fromStudy));
+    if(fromStudy&&toStudy&&fromStudy===toStudy) toStudy=oppositeStudy(fromStudy);
+    var reasons=['reason1','reason2','reason3'].map(function(k){return hostingFillValue(data[k]);});
+    return '<article class="paper official-paper form-sheet hosting-sheet hosting-sheet-exact hosting-v76"><div class="hosting-top-exact"><div class="hosting-logos-exact"><div class="hosting-logo-exact hosting-logo-college-exact">'+clearanceLogoHtml(runtimeClearanceCollegeLogoSrc||clearanceCollegeLogoSrc,'hosting-college-logo')+'</div><div class="hosting-logo-exact hosting-logo-university-exact">'+clearanceLogoHtml(runtimeClearanceUniversityLogoSrc||clearanceUniversityLogoSrc,'hosting-university-logo')+'</div></div><div class="hosting-title-exact"><div>جامعة كربلاء- كلية الهندسة</div><div>شعبة الشؤون الطلابية والتسجيل</div><div class="hosting-title-main-exact">استمارة استضافة</div></div></div><div class="hosting-rule-exact"></div><div class="hosting-body-exact hosting-body-v76"><div class="hosting-line-exact hosting-transfer-line-v76"><span>استضافة من الدراسة</span><b>('+safe(studyAdjective(fromStudy))+')</b><span>إلى الدراسة</span><b>('+safe(studyAdjective(toStudy))+')</b></div><div class="hosting-line-exact host-flow-line"><span>إني الطالب/ة</span> <b>('+val(data.studentName)+')</b> <span>أحد طلبة قسم</span> <b>('+val(data.department)+')</b> <span>المرحلة</span> <b>('+val(data.stage)+')</b></div><div class="hosting-line-exact host-flow-line"><span>الدراسة</span> <b>('+safe(studyAdjective(fromStudy))+')</b> <span>أروم الاستضافة إلى الدراسة</span> <b>('+safe(studyAdjective(toStudy))+')</b></div><div class="hosting-reasons-label-exact">وذلك للأسباب التالية:-</div><ol class="hosting-reasons-exact">'+reasons.map(function(v){return '<li>'+v+'</li>';}).join('')+'</ol></div><div class="hosting-student-sign-exact hosting-student-sign-v76"><div>اسم الطالب وتوقيعه</div><div>رقم الهاتف: '+fitPhone(data.phone)+'</div><div>التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div><section class="hosting-review-section-exact"><div class="hosting-review-title-exact">رأي القسم العلمي</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">'+squareMark(false)+'<span>أوافق على الطلب لوجود طاقة استيعابية.</span></div><div class="hosting-checkline-exact">'+squareMark(false)+'<span>لا أوافق على الطلب لعدم وجود طاقة استيعابية.</span></div></div><div class="hosting-sign-col-exact"><div>رئيس القسم</div><div>التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section><section class="hosting-review-section-exact"><div class="hosting-review-title-exact">رأي السيد عميد الكلية المحترم</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">'+squareMark(false)+'<span>لا مانع لدينا ونوصي السيد رئيس الجامعة المحترم بالموافقة على الاستضافة.</span></div><div class="hosting-checkline-exact">'+squareMark(false)+'<span>لا أوافق على رفع الطلب لعدم توفر الشروط.</span></div></div><div class="hosting-sign-col-exact"><div>أ.د.حيدر ناظم عزيز المحنة</div><div>العميد</div><div>التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section><section class="hosting-review-section-exact hosting-review-final-exact"><div class="hosting-review-title-exact">رأي السيد رئيس الجامعة المحترم</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">'+squareMark(false)+'<span>أوافق على الاستضافة.</span></div><div class="hosting-checkline-exact">'+squareMark(false)+'<span>لا أوافق على الاستضافة.</span></div></div><div class="hosting-sign-col-exact"><div>أ.د.صباح واجد علي</div><div>رئيس الجامعة</div><div>التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section></article>';
+  };
+
+  var oldSavePrint = window.saveAndPrintCurrentRequest || saveAndPrintCurrentRequest;
+  window.saveAndPrintCurrentRequest = saveAndPrintCurrentRequest = async function(){
+    try{
+      var result = await saveActiveRequest({mode:'print', force:true});
+      if (!result || result.ok !== true) throw new Error('تعذر تجهيز رقم الطلب.');
+      if (isMobileV76()) await downloadMobilePdfV76();
+      else printCurrentPreview();
+    }catch(err){
+      if (document.getElementById('submitStatus')) document.getElementById('submitStatus').textContent = err.message || 'تعذر تجهيز الطباعة.';
+      try { if (!isMobileV76()) printCurrentPreview(); } catch(e) {}
+    }
+  };
+
+  document.addEventListener('change', function(e){
+    var t=e.target; if(!t||!t.name) return;
+    if(t.name==='fromStudy'||t.name==='toStudy'){
+      var from=document.querySelector('[name="fromStudy"]'), to=document.querySelector('[name="toStudy"]');
+      if(from&&to&&from.value&&to.value&&normalizeStudyWord(from.value)===normalizeStudyWord(to.value)){
+        if(t.name==='fromStudy') to.value=oppositeStudy(from.value); else from.value=oppositeStudy(to.value);
+        if(typeof syncPreview==='function') setTimeout(syncPreview,0);
+      }
+    }
+  }, true);
+})();
