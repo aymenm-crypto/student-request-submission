@@ -18,7 +18,7 @@ function appServer(req) {
 }
 
 function doGet(e) {
-  return json_({ ok: true, message: 'Student Requests Web App v95 is running.', time: new Date().toISOString() });
+  return json_({ ok: true, message: 'Student Requests Web App v98 is running.', time: new Date().toISOString() });
 }
 
 function doPost(e) {
@@ -26,7 +26,7 @@ function doPost(e) {
   let payload = {};
   let requestId = '';
   let responseMode = '';
-  let source = 'student-request-v95';
+  let source = 'student-request-v98';
 
   try {
     const p = (e && e.parameter) || {};
@@ -375,7 +375,7 @@ function json_(obj) {
 function postMessage_(obj, requestId, source) {
   const safeJson = JSON.stringify(obj).replace(/</g, '\\u003c');
   const safeReq = JSON.stringify(requestId || '');
-  const safeSource = JSON.stringify(source || 'student-request-v95');
+  const safeSource = JSON.stringify(source || 'student-request-v98');
   const html = '<!doctype html><html><head><meta charset="utf-8"><script id="student-request-result" type="application/json">' + safeJson + '</script></head><body><script>try{window.top.postMessage({source:' + safeSource + ',requestId:' + safeReq + ',result:' + safeJson + '},"*");}catch(e){}<\/script></body></html>';
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
