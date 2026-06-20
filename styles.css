@@ -8282,9 +8282,6 @@ body.dark .dashboard-pro-v8 .dashboard-user strong, .dashboard-pro-v8.dashboard-
 body.dark .dashboard-pro-v8 .dashboard-system-credit span, .dashboard-pro-v8.dashboard-dark .dashboard-system-credit span,
 body.dark .dashboard-pro-v8 .dashboard-developer-mini span, .dashboard-pro-v8.dashboard-dark .dashboard-developer-mini span{color:#f8fafc!important;}
 
-/* GitHub Pages: request forms only */
-#uploadPage, #dashboardOpenBtn, .dashboard-entry-btn { display:none !important; }
-.hero-actions { justify-content:center; }
 
 /* v-final-2040-and-print: years extended in script.js and continuity print made deterministic */
 @media print{
@@ -8356,4 +8353,43 @@ body.dark .dashboard-pro-v8 .dashboard-developer-mini span, .dashboard-pro-v8.da
     font-size: 14px !important;
     line-height: 1.75 !important;
   }
+}
+
+
+/* v-onepage-upload-2040: كل الاستمارات صفحة واحدة + إظهار زر الرفع + كسر كاش السنوات */
+.hero-actions{justify-content:center;gap:12px;flex-wrap:wrap;}
+.hero-actions .btn.secondary{background:#f8fafc;border:1px solid #dbe3ef;color:#0f172a;}
+.hero-actions .btn.secondary:hover{background:#eef4ff;}
+#uploadPage{display:none;}
+#uploadPage.active{display:block;}
+#uploadPage .narrow{max-width:920px;margin-inline:auto;}
+#uploadPage .upload-box{min-height:150px;border:2px dashed #cbd5e1;border-radius:22px;background:#f8fbff;display:grid;place-items:center;text-align:center;cursor:pointer;padding:22px;}
+#uploadPage .upload-box input{display:none;}
+#uploadPage .upload-box strong{font-size:18px;color:#1d4ed8;}
+#uploadPage .info-box{background:#f8fafc;border:1px solid #dbe3ef;border-radius:16px;padding:14px;margin-top:12px;font-weight:800;color:#334155;text-align:center;}
+
+@media print{
+  html,body{width:210mm!important;min-height:297mm!important;background:#fff!important;overflow:visible!important;}
+  body{margin:0!important;padding:0!important;}
+  .app-shell,.topbar,.page:not(#formPage),#homePage,#formsPage,#uploadPage,#templatesPage,.footer-note{display:none!important;}
+  #formPage{display:block!important;margin:0!important;padding:0!important;background:#fff!important;}
+  .section-panel,.workspace-panel{border:0!important;box-shadow:none!important;background:#fff!important;margin:0!important;padding:0!important;}
+  .section-head,.form-actions,.actions,#submitStatus,.back-home,#backToFormsBtn,.btn{display:none!important;}
+  .preview-box,.preview-box *{visibility:visible!important;}
+  .preview-box{display:block!important;margin:0!important;padding:0!important;border:0!important;background:#fff!important;box-shadow:none!important;}
+  .paper,.official-paper,.form-sheet,.petition-sheet,.clearance-sheet,.medical-sheet{page-break-inside:avoid!important;break-inside:avoid!important;page-break-after:auto!important;break-after:auto!important;page-break-before:auto!important;break-before:auto!important;transform-origin:top center!important;}
+  .paper{width:190mm!important;max-width:190mm!important;min-height:auto!important;height:auto!important;margin:0 auto!important;padding:7mm!important;box-shadow:none!important;border:0!important;}
+  .continuity-page-one,.continuity-page-two,.continuity-onepage{page-break-before:auto!important;page-break-after:auto!important;break-before:auto!important;break-after:auto!important;min-height:auto!important;height:auto!important;}
+  .continuity-onepage .clearance-head{margin-bottom:3mm!important;}
+  .continuity-onepage .clearance-title{font-size:18px!important;margin:3mm auto!important;padding:2mm 8mm!important;}
+  .continuity-onepage .exact-continuity-info th,.continuity-onepage .exact-continuity-info td{font-size:12.5px!important;padding:1.8mm 1.6mm!important;}
+  .continuity-onepage .exact-continuity-grid{display:grid!important;grid-template-columns:1fr!important;gap:2mm!important;margin-top:3mm!important;}
+  .continuity-onepage .continuity-request-box{min-height:38mm!important;padding:3mm!important;}
+  .continuity-onepage .continuity-purpose-box{min-height:34mm!important;padding:3mm!important;}
+  .continuity-onepage .continuity-approval-pair-wrap{min-height:42mm!important;padding:2mm!important;}
+  .continuity-onepage .continuity-official-approval-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:2mm!important;}
+  .continuity-onepage .official-approval-box{min-height:38mm!important;}
+  .continuity-onepage .continuity-box-text,.continuity-onepage .official-approval-title,.continuity-onepage .official-approval-footer{font-size:12.5px!important;line-height:1.55!important;}
+  .sheet-title,.clearance-title,.hosting-title-main-exact,.paper-title{break-after:avoid!important;page-break-after:avoid!important;}
+  @page{size:A4 portrait;margin:4mm;}
 }

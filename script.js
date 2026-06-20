@@ -277,7 +277,7 @@ function reasonValues(data, keys){ return (keys || ['reason1','reason2','reason3
 function currentArabicDate(){ try { return new Date().toLocaleDateString('ar-IQ'); } catch(e){ return ''; } }
 function academicYearOptions(){
   const arr=[];
-  for (let y = 2025; y <= 2039; y++) arr.push(`${y}-${y+1}`);
+  for (let y = 2025; y <= 2039; y++) arr.push(`${y}-${y+1}`); // حتى 2039-2040
   return arr;
 }
 function buildDynamicFieldHtml(key,label,type){
@@ -637,11 +637,9 @@ function renderContinuityForm(form, data){
       </div>
     </div>`;
 
-  return `<article class="paper official-paper form-sheet continuity-paper exact-clearance-sheet exact-continuity-sheet continuity-page-one">
+  return `<article class="paper official-paper form-sheet continuity-paper exact-clearance-sheet exact-continuity-sheet continuity-onepage">
     ${headerBlock}
     ${infoTable}
-  </article>
-  <article class="paper official-paper form-sheet continuity-paper exact-clearance-sheet exact-continuity-sheet continuity-page-two">
     ${secondPage}
   </article>`;
 }
@@ -3636,6 +3634,10 @@ function setupServerBindings(){
           studentName: uploadNameInput ? uploadNameInput.value.trim() : '',
           file: $('uploadFile').files && $('uploadFile').files[0] ? await fileToObject($('uploadFile').files[0]) : null
         };
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+          if ($('uploadInfo')) $('uploadInfo').textContent = 'تم تجهيز بيانات الرفع داخل الواجهة. الرفع الفعلي يحتاج ربط سكربت الرفع في الخطوة التالية.';
+          return;
+        }
         const result = await runServer('uploadCompletedRequest', payload);
         if ($('uploadInfo')) $('uploadInfo').textContent = 'تم رفع الملف بنجاح. رقم المعاملة: ' + result.requestNo;
         completedUploadForm.reset();
