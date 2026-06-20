@@ -6433,3 +6433,55 @@ function setupServerBindings(){
     }
   }, true);
 })();
+
+
+/* V86 iPhone/mobile print override */
+(function(){
+  function isIOSLike(){
+    try {
+      var ua = navigator.userAgent || '';
+      var touchMac = /Macintosh/.test(ua) && ('ontouchend' in document);
+      return /iPhone|iPad|iPod/.test(ua) || touchMac;
+    } catch(e){ return false; }
+  }
+  function isMobileLike(){
+    try { return window.matchMedia && window.matchMedia('(max-width: 900px)').matches; } catch(e){ return false; }
+  }
+  function activeClass(){
+    try { return (typeof getActivePrintClass === 'function' ? getActivePrintClass() : '').trim(); } catch(e){ return ''; }
+  }
+  function landscape(){
+    try { return typeof isLandscapeForm === 'function' ? !!isLandscapeForm() : false; } catch(e){ return false; }
+  }
+  function buildPopupHtml(printInner, formClass, isLand){
+    var cache = Date.now();
+    var pageCss = isLand ?
+      '@page{size:A4 landscape;margin:3mm!important;}html,body{margin:0!important;padding:0!important;background:#fff!important;width:287mm!important;min-width:287mm!important;max-width:287mm!important;height:194mm!important;min-height:194mm!important;max-height:194mm!important;overflow:hidden!important;}#formPage,#printArea{display:block!important;width:287mm!important;height:194mm!important;min-height:0!important;max-height:194mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;box-sizing:border-box!important;}' :
+      '@page{size:A4 portrait;margin:3mm!important;}html,body{margin:0!important;padding:0!important;background:#fff!important;width:200mm!important;min-width:200mm!important;max-width:200mm!important;height:279mm!important;min-height:279mm!important;max-height:279mm!important;overflow:hidden!important;}#formPage,#printArea{display:block!important;width:200mm!important;height:279mm!important;min-height:0!important;max-height:279mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;box-sizing:border-box!important;}';
+    var fixCss = '*{box-sizing:border-box!important;}body{direction:rtl!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}html,body,#formPage,#printArea{overflow:hidden!important;}#printArea>*{page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}#printArea>.form-sheet,#printArea>.petition-sheet,#printArea>.exact-clearance-sheet,#printArea>.medical-two-up-sheet,#printArea>.medical-two-up-sheet-v53,#printArea>.medical-two-up-sheet-v54{margin:0 auto!important;box-shadow:none!important;}@media print{'+pageCss+'}'+pageCss;
+    return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="styles.css?v='+cache+'"><style>'+fixCss+'</style></head><body class="print-mode-active mobile-print-v86 '+formClass+'"><div id="formPage"><div id="printArea">'+printInner+'</div></div><script>window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print();},500);});window.onafterprint=function(){setTimeout(function(){try{window.close();}catch(e){}},800);};<\/script></body></html>';
+  }
+  var oldPrint = window.printCurrentPreview;
+  window.printCurrentPreview = function(){
+    if (!(isIOSLike() || isMobileLike())) {
+      return oldPrint ? oldPrint() : undefined;
+    }
+    try {
+      if (typeof ensureFreshPreview === 'function') ensureFreshPreview();
+      var printArea = document.getElementById('printArea');
+      if (!printArea || !String(printArea.innerHTML || '').trim()) {
+        alert('لا توجد استمارة جاهزة للطباعة. املأ الاستمارة أولاً.');
+        return;
+      }
+      var w = window.open('', '_blank');
+      if (!w) return oldPrint ? oldPrint() : undefined;
+      w.document.open();
+      w.document.write(buildPopupHtml(printArea.innerHTML, activeClass(), landscape()));
+      w.document.close();
+      return;
+    } catch(e){
+      return oldPrint ? oldPrint() : undefined;
+    }
+  };
+  try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+})();

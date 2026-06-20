@@ -9429,3 +9429,167 @@ body.print-mode-active.print-form-absence #formPage .committee-sheet .academic-r
   body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-box{min-height:56mm !important;height:56mm !important;}
   body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-review-section-exact{min-height:40mm !important;}
 }
+
+/* =========================================================
+   V86 TARGETED FIXES
+   1) Hosting: baseline alignment for "من/إلى" line and better signature space.
+   2) iPhone/mobile print: compress continuity/official pages further to fit one page.
+   ========================================================= */
+
+/* Hosting line alignment */
+body.print-mode-active.print-form-hosting #formPage .hosting-line-transfer.hosting-transfer-box,
+.print-form-hosting .hosting-line-transfer.hosting-transfer-box,
+.hosting-line-transfer.hosting-transfer-box{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:baseline !important;
+  justify-content:flex-start !important;
+  gap:3mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-line-transfer.hosting-transfer-box .host-label,
+body.print-mode-active.print-form-hosting #formPage .hosting-line-transfer.hosting-transfer-box .host-study-fill,
+.print-form-hosting .hosting-line-transfer.hosting-transfer-box .host-label,
+.print-form-hosting .hosting-line-transfer.hosting-transfer-box .host-study-fill,
+.hosting-line-transfer.hosting-transfer-box .host-label,
+.hosting-line-transfer.hosting-transfer-box .host-study-fill{
+  vertical-align:baseline !important;
+  line-height:1.15 !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-line-transfer.hosting-transfer-box .host-study-fill,
+.print-form-hosting .hosting-line-transfer.hosting-transfer-box .host-study-fill,
+.hosting-line-transfer.hosting-transfer-box .host-study-fill{
+  min-width:34mm !important;
+  text-align:center !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 .8mm !important;
+  position:relative !important;
+  top:0 !important;
+}
+
+/* Hosting signatures / dates */
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact,
+.print-form-hosting .hosting-sign-col-exact,
+.hosting-sign-col-exact{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+  align-items:center !important;
+  text-align:center !important;
+  min-height:34mm !important;
+  padding-top:1.4mm !important;
+  line-height:1.9 !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact > div,
+.print-form-hosting .hosting-sign-col-exact > div,
+.hosting-sign-col-exact > div{
+  margin:0 !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact .hosting-date-exact,
+.print-form-hosting .hosting-sign-col-exact .hosting-date-exact,
+.hosting-sign-col-exact .hosting-date-exact{
+  margin-top:auto !important;
+  padding-top:8.5mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-review-grid-exact,
+.print-form-hosting .hosting-review-grid-exact,
+.hosting-review-grid-exact{
+  align-items:stretch !important;
+}
+
+/* Mobile / iPhone print compression */
+@media print{
+  body.mobile-print-v86,
+  body.ios-pdf-mode.mobile-print-v86,
+  body.print-mode-active.mobile-print-v86{
+    margin:0 !important;
+    padding:0 !important;
+    background:#fff !important;
+    overflow:hidden !important;
+  }
+  body.mobile-print-v86 #formPage,
+  body.mobile-print-v86 #printArea,
+  body.ios-pdf-mode.mobile-print-v86 #formPage,
+  body.ios-pdf-mode.mobile-print-v86 #printArea{
+    margin:0 auto !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    background:#fff !important;
+  }
+  body.mobile-print-v86 #printArea > .form-sheet,
+  body.mobile-print-v86 #printArea > .paper,
+  body.mobile-print-v86 #printArea > .official-paper,
+  body.ios-pdf-mode.mobile-print-v86 #printArea > .form-sheet,
+  body.ios-pdf-mode.mobile-print-v86 #printArea > .paper,
+  body.ios-pdf-mode.mobile-print-v86 #printArea > .official-paper{
+    transform:scale(.93) !important;
+    -webkit-transform:scale(.93) !important;
+    transform-origin:top center !important;
+    -webkit-transform-origin:top center !important;
+    margin:0 auto !important;
+    box-shadow:none !important;
+    page-break-after:avoid !important;
+    break-after:avoid-page !important;
+  }
+  body.mobile-print-v86.print-form-continuity #printArea > .form-sheet,
+  body.mobile-print-v86.print-form-continuity #printArea > .paper,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity #printArea > .form-sheet,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity #printArea > .paper{
+    transform:scale(.89) !important;
+    -webkit-transform:scale(.89) !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet{
+    min-height:248mm !important;
+    height:auto !important;
+    padding-top:1.5mm !important;
+    padding-bottom:.6mm !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-title,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-title{
+    margin:1.2mm 0 1.2mm !important;
+    font-size:14.8px !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-info,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-info{
+    margin-bottom:1mm !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-info th,
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-info td,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-info th,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-info td{
+    font-size:9.9px !important;
+    padding:1.4mm 1.2mm !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-grid,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .exact-continuity-grid{
+    gap:1.1mm !important;
+    margin-top:1.2mm !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-request-box,
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-purpose-box,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-request-box,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-purpose-box{
+    min-height:26mm !important;
+    padding:2mm 2.4mm !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-approval-pair-wrap,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-approval-pair-wrap{
+    min-height:34mm !important;
+    padding:1.6mm !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .official-approval-box,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .official-approval-box{
+    min-height:33mm !important;
+  }
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-box-text,
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .official-approval-title,
+  body.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .official-approval-footer,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .continuity-box-text,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .official-approval-title,
+  body.ios-pdf-mode.mobile-print-v86.print-form-continuity article.exact-continuity-sheet .official-approval-footer{
+    font-size:10px !important;
+    line-height:1.4 !important;
+  }
+}
