@@ -139,7 +139,7 @@ const forms = [
     directedTo:'شعبة التسجيل وشؤون الطلبة',
     purpose:'استحصال براءة ذمة',
     printType:'clearance',
-    baseFieldsVisible:['studentName','department','stage'],
+    baseFieldsVisible:['studentName','department','stage','phone'],
     fields:[
       ['academicYear','العام الدراسي','year'],
       ['studyShift','الدراسة','select:الصباحية|المسائية'],
@@ -198,7 +198,7 @@ const forms = [
     purpose:'فحص ومعالجة',
     printType:'medical_check',
     pageOrientation:'landscape',
-    baseFieldsVisible:['studentName','department','studyType','stage'],
+    baseFieldsVisible:['studentName','department','studyType','stage','phone'],
     fields:[],
     template:'يرجى تفضلكم بتزويدي باستمارة فحص ومعالجة لغرض المعاينة الطبية في المركز الصحي.'
   }
@@ -224,6 +224,62 @@ function fillSelect(el, items, placeholder){
 }
 function escapeHtml(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 function displayValue(v){ const s = String(v == null ? '' : v).trim(); return s ? escapeHtml(s) : '........................'; }
+function fitClassForPrint(value, type){
+  const len = Array.from(String(value == null ? '' : value).trim()).length;
+  const t = String(type || 'text');
+  if (t === 'department') {
+    if (len >= 34) return ' fit-xxs';
+    if (len >= 26) return ' fit-xs';
+    if (len >= 19) return ' fit-sm';
+  }
+  if (t === 'student') {
+    if (len >= 42) return ' fit-xxs';
+    if (len >= 34) return ' fit-xs';
+    if (len >= 25) return ' fit-sm';
+  }
+  if (t === 'phone') {
+    return ' fit-phone';
+  }
+  if (len >= 32) return ' fit-xs';
+  if (len >= 24) return ' fit-sm';
+  return '';
+}
+function fitValue(v, type){
+  const raw = String(v == null ? '' : v).trim();
+  const txt = raw ? escapeHtml(raw) : '........................';
+  const safeType = String(type || 'text').replace(/[^a-zA-Z0-9_-]/g, '');
+  return `<span class="fit-text fit-${safeType}${fitClassForPrint(raw, safeType)}" data-fit-type="${safeType}" title="${escapeHtml(raw)}">${txt}</span>`;
+}
+function fitDepartment(v){ return fitValue(v, 'department'); }
+function fitStudent(v){ return fitValue(v, 'student'); }
+function fitPhone(v){ return fitValue(v, 'phone'); }
+function fitShort(v){ return fitValue(v, 'short'); }
+function applyAutoFit(root){
+  try{
+    const base = root || document;
+    const nodes = base.querySelectorAll ? base.querySelectorAll('.fit-text') : [];
+    nodes.forEach(el => {
+      el.style.whiteSpace = 'nowrap';
+      el.style.display = 'inline-block';
+      el.style.maxWidth = '100%';
+      el.style.overflow = 'hidden';
+      el.style.textOverflow = 'clip';
+      let parent = el.parentElement;
+      if (!parent) return;
+      // reset, then shrink to actual available width
+      el.style.fontSize = '';
+      let size = parseFloat(getComputedStyle(el).fontSize || '12');
+      const min = el.classList.contains('fit-department') ? 7.2 : (el.classList.contains('fit-student') ? 7.5 : 8);
+      let guard = 0;
+      while (el.scrollWidth > parent.clientWidth - 2 && size > min && guard < 30) {
+        size -= 0.45;
+        el.style.fontSize = size + 'px';
+        guard++;
+      }
+    });
+  }catch(e){}
+}
+
 function courseLabelForPrint(data){
   const mode = String((data && data.courseMode) || '').trim();
   const courseName = String((data && data.courseName) || '').trim();
@@ -516,7 +572,15 @@ function hostHeader(){
     <div class="host-separator"></div>`;
 }
 function topInfoRow(cells){
-  return `<table class="outline-table top-info-row"><tr>${cells.map(cell => `<th>${escapeHtml(cell[0])}</th><td>${cell[1]}</td>`).join('')}</tr></table>`;
+  const chunks = [];
+  const perRow = cells.length > 4 ? 3 : cells.length;
+  for (let i = 0; i < cells.length; i += perRow) chunks.push(cells.slice(i, i + perRow));
+  const rows = chunks.map(row => {
+    let html = row.map(cell => `<th>${escapeHtml(cell[0])}</th><td>${cell[1]}</td>`).join('');
+    while (row.length < perRow) { html += '<th class="blank-cell">&nbsp;</th><td class="blank-cell">&nbsp;</td>'; row.push(['','']); }
+    return `<tr>${html}</tr>`;
+  }).join('');
+  return `<table class="outline-table top-info-row smart-top-info">${rows}</table>`;
 }
 function reasonsListHtml(data){
   return `<ol class="reason-list fixed-three">${reasonValues(data).map(v => `<li>${v}</li>`).join('')}</ol>`;
@@ -534,12 +598,13 @@ function renderCommitteeBody(form, data, opts){
   const deanLabel = opts.deanLabel || 'توصية السيد العميد المحترم:';
   const sheetClass = ['committee-sheet', opts.sheetClass || ''].join(' ').trim();
   const topCells = [
-    ['اسم الطالب الرباعي', displayValue(data.studentName)],
-    ['القسم', displayValue(data.department)],
-    ['المرحلة', displayValue(data.stage)]
+    ['اسم الطالب الرباعي', fitStudent(data.studentName)],
+    ['القسم', fitDepartment(data.department)],
+    ['رقم الهاتف', fitPhone(data.phone)],
+    ['المرحلة', fitShort(data.stage)]
   ];
   const cleanStudyLabel = String(studyLabel || 'نوع الدراسة').replace(/[/:،]+\s*$/g, '').trim();
-  if (includeStudyType) topCells.push([cleanStudyLabel || 'نوع الدراسة', displayStudyValue(data.studyType)]);
+  if (includeStudyType) topCells.push([cleanStudyLabel || 'نوع الدراسة', fitShort(studyAdjective(data.studyType))]);
   return `<article class="paper official-paper form-sheet ${sheetClass}">
     ${ministryHeader(form.title, opts.headerClass || '')}
     ${topInfoRow(topCells)}
@@ -548,7 +613,7 @@ function renderCommitteeBody(form, data, opts){
       ${reasonsListHtml(data)}
       ${extraAfterReasons}
       ${undertakingLine ? `<div class="undertaking-line committee-undertaking">${undertakingLine}</div>` : ''}
-      <div class="request-sign-right">التوقيع :<br>الاسم : ${displayValue(data.studentName)}<br>التاريخ : ${currentArabicDate()}</div>
+      <div class="request-sign-right">التوقيع :<br>الاسم : ${fitStudent(data.studentName)}<br>التاريخ : ${currentArabicDate()}</div>
     </td></tr></table>
     <div class="outline-box review-stack-box">
       <div class="review-stack-cell">رأي لجنة الإرشاد في القسم</div>
@@ -587,7 +652,7 @@ function renderContinuityForm(form, data){
       <div class="clearance-ministry exact-clearance-ministry exact-continuity-ministry">
         <div>وزارة التعليم العالي والبحث العلمي</div>
         <div>جامعة كربلاء – كلية الهندسة</div>
-        <div>قسم ${displayValue(data.department)}</div>
+        <div>قسم ${fitDepartment(data.department)}</div>
       </div>
       <div class="clearance-logo clearance-logo-university">${clearanceLogoHtml(runtimeClearanceUniversityLogoSrc,'clearance-university-logo')}</div>
     </div>
@@ -595,16 +660,22 @@ function renderContinuityForm(form, data){
 
   const infoTable = `
     <table class="outline-table clearance-info exact-clearance-info exact-continuity-info continuity-first-info">
+      <colgroup>
+        <col class="continuity-label-col">
+        <col class="continuity-value-col">
+        <col class="continuity-label-col">
+        <col class="continuity-wide-col">
+      </colgroup>
       <tr>
-        <th>اسم الطالب/ة</th><td>${displayValue(data.studentName)}</td>
-        <th>الدراسة</th><td class="option-row">${squareMark(study==='الدراسة الصباحية')} الصباحية ${squareMark(study==='الدراسة المسائية')} المسائية</td>
+        <th>اسم الطالب/ة</th><td class="continuity-name-cell">${fitStudent(data.studentName)}</td>
+        <th>الدراسة</th><td class="option-row continuity-study-cell">${squareMark(study==='الدراسة الصباحية')} الصباحية ${squareMark(study==='الدراسة المسائية')} المسائية</td>
       </tr>
       <tr>
-        <th>القسم العلمي</th><td>${displayValue(data.department)}</td>
-        <th>المرحلة</th><td class="option-row">${['الأولى','الثانية','الثالثة','الرابعة','الخامسة'].map(v => `${squareMark(data.stage===v)} ${escapeHtml(v)}`).join(' ')}</td>
+        <th>القسم العلمي</th><td class="continuity-department-cell">${fitDepartment(data.department)}</td>
+        <th>المرحلة</th><td class="option-row continuity-stage-cell">${['الأولى','الثانية','الثالثة','الرابعة','الخامسة'].map(v => `${squareMark(data.stage===v)} ${escapeHtml(v)}`).join(' ')}</td>
       </tr>
       <tr>
-        <th>رقم الهاتف</th><td>${displayValue(data.phone)}</td>
+        <th>رقم الهاتف</th><td class="continuity-phone-cell">${fitPhone(data.phone)}</td>
         <th>توقيع الطالب</th><td class="continuity-signature-cell"></td>
       </tr>
     </table>`;
@@ -742,6 +813,7 @@ function renderHostingForm(form, data){
 
     <div class="hosting-student-sign-exact">
       <div>اسم الطالب وتوقيعه</div>
+      <div class="hosting-phone-exact">رقم الهاتف: ${fitPhone(data.phone)}</div>
       <div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div>
     </div>
 
@@ -804,23 +876,26 @@ function renderClearanceForm(form, data){
       <div class="clearance-ministry exact-clearance-ministry">
         <div>وزارة التعليم العالي والبحث العلمي</div>
         <div>جامعة كربلاء – كلية الهندسة</div>
-        <div>قسم ${displayValue(data.department)}</div>
+        <div>قسم ${fitDepartment(data.department)}</div>
       </div>
       <div class="clearance-logo clearance-logo-university">${clearanceLogoHtml(runtimeClearanceUniversityLogoSrc,'clearance-university-logo')}</div>
     </div>
     <div class="clearance-title exact-clearance-title">استمارة براءة الذمة للعام ${displayYearRange(data.academicYear)}</div>
     <table class="outline-table clearance-info exact-clearance-info">
       <tr>
-        <th>اسم الطالب/ة</th><td>${displayValue(data.studentName)}</td>
+        <th>اسم الطالب/ة</th><td>${fitStudent(data.studentName)}</td>
         <th>الدراسة</th><td class="option-row">${squareMark(study==='الدراسة الصباحية')} الصباحية ${squareMark(study==='الدراسة المسائية')} المسائية</td>
       </tr>
       <tr>
-        <th>القسم العلمي</th><td>${displayValue(data.department)}</td>
+        <th>القسم العلمي</th><td>${fitDepartment(data.department)}</td>
         <th>المرحلة</th><td class="option-row">${['الأولى','الثانية','الثالثة','الرابعة','الخامسة'].map(v => `${squareMark(data.stage===v)} ${escapeHtml(v)}`).join(' ')}</td>
       </tr>
       <tr>
+        <th>رقم الهاتف</th><td>${fitPhone(data.phone)}</td>
         <th>قناة القبول</th><td class="option-row">${['عامة','موازي','ذوي الشهداء','مباشر'].map(v => `${squareMark(data.admissionChannel===v)} ${escapeHtml(v)}`).join(' ')}</td>
-        <th>الدور</th><td class="option-row">${squareMark(data.round==='الأول')} الاول ${squareMark(data.round==='الثاني')} الثاني</td>
+      </tr>
+      <tr>
+        <th>الدور</th><td class="option-row" colspan="3">${squareMark(data.round==='الأول')} الاول ${squareMark(data.round==='الثاني')} الثاني</td>
       </tr>
     </table>
     <div class="clearance-grid exact-clearance-grid rtl-two">
@@ -844,8 +919,8 @@ function renderMedicalCheckForm(form, data){
   const deptRaw = String(data.department || '').trim();
   const deptAr = deptRaw ? escapeHtml(deptRaw) : '';
   const deptEn = escapeHtml(departmentEnglishName(data.department));
-  const student = displayValue(data.studentName);
-  const stage = displayValue(data.stage);
+  const student = fitStudent(data.studentName);
+  const stage = fitShort(data.stage);
   const studyType = displayStudyValue(data.studyType);
   const today = currentArabicDate();
   const singleLogoSrc = runtimeClearanceUniversityLogoSrc || printLogoSrc || '';
@@ -916,11 +991,11 @@ function renderPetitionForm(form, data){
       <div class="petition-mark">م/ ${escapeHtml(petitionSubject(form.petitionKind))}</div>
       <div class="petition-body">
         <div class="petition-greeting">تحية طيبة ....</div>
-        <p>إني الطالب / (${displayValue(data.studentName)}) والمقبول في كليتكم الموقرة / قسم (${displayValue(data.department)}) المرحلة (${displayValue(data.stage)}) الدراسة (${displayStudyValue(data.studyType)}) والمقبول في العام الدراسي (${displayYear(data.academicYear)}).</p>
+        <p>إني الطالب / (${fitStudent(data.studentName)}) والمقبول في كليتكم الموقرة / قسم (${fitDepartment(data.department)}) المرحلة (${fitShort(data.stage)}) الدراسة (${displayStudyValue(data.studyType)}) والمقبول في العام الدراسي (${displayYear(data.academicYear)}).</p>
         <p>ارجو تفضلكم بالموافقة على (${escapeHtml(petitionVerb(form.petitionKind))}) وذلك بسبب (${displayValue(data.petitionReason)}).</p>
         <p class="petition-thanks">ولكم الامر ... مع فائق الشكر والاحترام</p>
       </div>
-      <div class="petition-signature-block">التوقيع:<br><br>الاسم: ${displayValue(data.studentName)}<br><br>القسم: ${displayValue(data.department)}<br><br>المرحلة: ${displayValue(data.stage)}<br><br>الدراسة: ${displayStudyValue(data.studyType)}<br><br>التاريخ: ${currentArabicDate()}<br><br>رقم الهاتف: ${displayValue(data.phone)}</div>
+      <div class="petition-signature-block">التوقيع:<br><br>الاسم: ${fitStudent(data.studentName)}<br><br>القسم: ${fitDepartment(data.department)}<br><br>المرحلة: ${fitShort(data.stage)}<br><br>الدراسة: ${displayStudyValue(data.studyType)}<br><br>التاريخ: ${currentArabicDate()}<br><br>رقم الهاتف: ${fitPhone(data.phone)}</div>
       <div class="official-approval-grid petition-official-approval-grid">
         <div class="official-approval-box official-approval-right">
           <div class="official-approval-title">تأييد رئيس القسم المختص وختمه</div>
@@ -957,6 +1032,7 @@ function syncPreview(){
   if (!activeForm || !$('mainForm') || !$('printArea')) return;
   const data = getFormData();
   $('printArea').innerHTML = renderPreview(activeForm, data);
+  applyAutoFit($('printArea'));
   if (iosPrintReadyKey) {
     try {
       const freshKey = payloadKey(buildRequestPayload());
@@ -1030,6 +1106,7 @@ function isIOSPrintDevice(){
 }
 function printCurrentPreview(){
   if (!$('printArea')) return;
+  applyAutoFit($('printArea'));
   syncPreview();
 
   const ua = navigator.userAgent || '';
