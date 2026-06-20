@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>البوابة الإلكترونية للطلبات الطلابية</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="screen no-print">
+    <header class="topbar">
+      <div class="logo university-logo" aria-label="شعار الجامعة">جامعة<br>كربلاء</div>
+      <div class="brand-text">
+        <div class="ministry">وزارة التعليم العالي والبحث العلمي</div>
+        <h1>البوابة الإلكترونية للطلبات الطلابية</h1>
+        <div class="college">جامعة كربلاء - كلية الهندسة</div>
+      </div>
+      <div class="logo college-logo" aria-label="شعار الكلية">كلية<br>الهندسة</div>
+    </header>
+
+    <main class="layout">
+      <section class="form-card">
+        <div class="card-title">
+          <span class="icon">📝</span>
+          <div>
+            <h2>استمارة تقديم طلب طالب</h2>
+            <p>املأ البيانات، ثم احفظ الطلب واطبع الاستمارة للتوقيع الورقي.</p>
+          </div>
+        </div>
+
+        <form id="studentRequestForm" autocomplete="on">
+          <div class="grid">
+            <label class="field wide">
+              <span>نوع الطلب <b>*</b></span>
+              <select id="requestType" name="requestType" required>
+                <option value="">اختر نوع الطلب</option>
+                <option value="استمرارية في الدوام">استمرارية في الدوام</option>
+                <option value="تأييد تخرج">تأييد تخرج</option>
+                <option value="تأجيل سنة دراسية">تأجيل سنة دراسية</option>
+                <option value="تخفيض أجور">تخفيض أجور</option>
+                <option value="رفع غياب">رفع غياب</option>
+                <option value="استضافة">استضافة</option>
+                <option value="نقل">نقل</option>
+                <option value="براءة ذمة">براءة ذمة</option>
+                <option value="إعادة ترقين قيد">إعادة ترقين قيد</option>
+                <option value="فحص ومعالجة">فحص ومعالجة</option>
+                <option value="طلب آخر">طلب آخر</option>
+              </select>
+            </label>
+
+            <label class="field wide">
+              <span>اسم الطالب الرباعي <b>*</b></span>
+              <input id="fullName" name="fullName" type="text" required placeholder="اكتب الاسم الرباعي">
+            </label>
+
+            <label class="field">
+              <span>الجنس <b>*</b></span>
+              <select id="gender" name="gender" required>
+                <option value="">اختر</option>
+                <option value="ذكر">ذكر</option>
+                <option value="أنثى">أنثى</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>القسم <b>*</b></span>
+              <select id="department" name="department" required>
+                <option value="">اختر القسم</option>
+                <option value="هندسة الطب حياتي">هندسة الطب حياتي</option>
+                <option value="الهندسة المدنية">الهندسة المدنية</option>
+                <option value="الهندسة الكهربائية والإلكترونية">الهندسة الكهربائية والإلكترونية</option>
+                <option value="الهندسة الميكانيكية">الهندسة الميكانيكية</option>
+                <option value="هندسة النفط">هندسة النفط</option>
+                <option value="هندسة العمارة">هندسة العمارة</option>
+                <option value="هندسة المواد">هندسة المواد</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>المرحلة <b>*</b></span>
+              <select id="stage" name="stage" required>
+                <option value="">اختر المرحلة</option>
+                <option value="الأولى">الأولى</option>
+                <option value="الثانية">الثانية</option>
+                <option value="الثالثة">الثالثة</option>
+                <option value="الرابعة">الرابعة</option>
+                <option value="الخامسة">الخامسة</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>نوع الدراسة <b>*</b></span>
+              <select id="studyType" name="studyType" required>
+                <option value="">اختر</option>
+                <option value="الصباحية">الصباحية</option>
+                <option value="المسائية">المسائية</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>رقم الهاتف <b>*</b></span>
+              <input id="phone" name="phone" type="tel" inputmode="tel" required placeholder="07xxxxxxxxx">
+            </label>
+
+            <label class="field">
+              <span>البريد الإلكتروني</span>
+              <input id="email" name="email" type="email" placeholder="اختياري">
+            </label>
+
+            <label class="field">
+              <span>المحافظة</span>
+              <input id="governorate" name="governorate" type="text">
+            </label>
+
+            <label class="field">
+              <span>العنوان</span>
+              <input id="address" name="address" type="text">
+            </label>
+
+            <label class="field wide" id="directedToBox">
+              <span>الجهة الموجه إليها</span>
+              <input id="directedTo" name="directedTo" type="text" value="عمادة كلية الهندسة">
+            </label>
+
+            <label class="field wide" id="extraInfoBox" hidden>
+              <span id="extraInfoLabel">معلومات إضافية</span>
+              <textarea id="extraInfo" name="extraInfo" rows="3"></textarea>
+            </label>
+
+            <label class="field wide">
+              <span id="detailsLabel">تفاصيل الطلب</span>
+              <textarea id="details" name="details" rows="4" placeholder="اكتب تفاصيل الطلب"></textarea>
+            </label>
+
+            <label class="field wide" id="reasonBox">
+              <span>سبب الطلب</span>
+              <textarea id="reason" name="reason" rows="3" placeholder="اكتب سبب الطلب إن وجد"></textarea>
+            </label>
+
+            <label class="field wide">
+              <span>ملاحظات الطالب</span>
+              <textarea id="studentNote" name="studentNote" rows="2" placeholder="اختياري"></textarea>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="primary" id="saveBtn">حفظ الطلب وتجهيز الطباعة</button>
+            <button type="button" class="secondary" id="resetBtn">مسح البيانات</button>
+          </div>
+        </form>
+
+        <div id="message" class="message" role="status" aria-live="polite"></div>
+      </section>
+
+      <aside class="side-card">
+        <h3>خطوات العمل</h3>
+        <ol>
+          <li>املأ الطلب من هذه الصفحة.</li>
+          <li>سيتم إنشاء رقم طلب تلقائيًا.</li>
+          <li>اطبع الاستمارة أو احفظها PDF.</li>
+          <li>وقّع الاستمارة ورقيًا.</li>
+          <li>ارفع النسخة الموقعة من رابط الرفع المستقل.</li>
+        </ol>
+        <div class="notice">
+          رقم الطلب سيظهر أعلى الاستمارة وفي الحاشية، ويجب الاحتفاظ به للرفع والمتابعة.
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <section id="resultPanel" class="result-panel no-print" hidden>
+    <div class="result-card">
+      <h2>تم تجهيز الطلب</h2>
+      <p>رقم الطلب:</p>
+      <div id="requestIdPreview" class="request-id"></div>
+      <div class="actions centered">
+        <button class="primary" id="printBtn">طباعة / حفظ PDF</button>
+        <button class="secondary" id="newBtn">طلب جديد</button>
+      </div>
+      <p class="soft-note">بعد ظهور نافذة الطباعة، اختر حفظ PDF أو اطبع الاستمارة للتوقيع.</p>
+    </div>
+  </section>
+
+  <section class="print-only" id="printArea">
+    <div class="paper">
+      <div class="request-stamp">رقم الطلب: <span data-print="requestId"></span></div>
+
+      <header class="paper-header">
+        <div class="paper-logo">شعار<br>الجامعة</div>
+        <div class="paper-title">
+          <div>جمهورية العراق</div>
+          <div>وزارة التعليم العالي والبحث العلمي</div>
+          <div>جامعة كربلاء</div>
+          <div>كلية الهندسة</div>
+        </div>
+        <div class="paper-logo">شعار<br>الكلية</div>
+      </header>
+
+      <h2 class="paper-heading" data-print="requestType">استمارة طلب طالب</h2>
+
+      <div class="paper-line">إلى / <span class="dotted" data-print="directedTo"></span></div>
+      <div class="paper-line">م / <span class="dotted" data-print="requestType"></span></div>
+      <div class="paper-line">تحية طيبة...</div>
+      <div class="paper-line">يرجى التفضل بالموافقة على طلبي المبين أدناه، مع فائق الشكر والتقدير.</div>
+
+      <table class="info-table">
+        <tr>
+          <td class="label">اسم الطالب الرباعي</td><td data-print="fullName"></td>
+          <td class="label">الجنس</td><td data-print="gender"></td>
+        </tr>
+        <tr>
+          <td class="label">القسم</td><td data-print="department"></td>
+          <td class="label">المرحلة</td><td data-print="stage"></td>
+        </tr>
+        <tr>
+          <td class="label">نوع الدراسة</td><td data-print="studyType"></td>
+          <td class="label">رقم الهاتف</td><td data-print="phone"></td>
+        </tr>
+        <tr>
+          <td class="label">المحافظة</td><td data-print="governorate"></td>
+          <td class="label">تاريخ الطلب</td><td data-print="dateText"></td>
+        </tr>
+      </table>
+
+      <div class="paper-section-title">تفاصيل الطلب:</div>
+      <div class="paper-box" data-print="details"></div>
+
+      <div id="printReasonBlock">
+        <div class="paper-section-title">سبب الطلب:</div>
+        <div class="paper-box" data-print="reason"></div>
+      </div>
+
+      <div class="signatures">
+        <div>توقيع الطالب<br>الاسم: <span data-print="fullName"></span><br>التوقيع: ____________</div>
+        <div>شعبة التسجيل<br>الاسم: ____________<br>التوقيع: ____________</div>
+        <div>مصادقة الجهة المختصة<br>الاسم: ____________<br>التوقيع: ____________</div>
+      </div>
+
+      <footer class="paper-footer">
+        رقم الطلب: <span data-print="requestId"></span> | بعد توقيع الاستمارة يتم رفع النسخة الموقعة من رابط الرفع المستقل.
+      </footer>
+    </div>
+  </section>
+
+  <iframe name="hiddenSubmitFrame" id="hiddenSubmitFrame" hidden></iframe>
+  <form id="googleFormSubmit" class="hidden-form" method="POST" target="hiddenSubmitFrame"
+        action="https://docs.google.com/forms/d/e/1FAIpQLSfybTW8gztzG4-FzOXNpKZ3ZY77t_TZKMntc-ENEzMvaT0K9A/formResponse">
+    <input name="entry.733863792" id="g_requestId">
+    <input name="entry.1697986856" id="g_requestType">
+    <input name="entry.1871558669" id="g_fullName">
+    <input name="entry.932390662" id="g_gender">
+    <input name="entry.872749219" id="g_department">
+    <input name="entry.1466097518" id="g_stage">
+    <input name="entry.33250945" id="g_studyType">
+    <input name="entry.1924961303" id="g_phone">
+    <input name="entry.44513465" id="g_email">
+    <input name="entry.283381111" id="g_governorate">
+    <input name="entry.1857603075" id="g_address">
+    <input name="entry.418785480" id="g_details">
+    <input name="entry.392138003" id="g_reason">
+    <input name="entry.869274495" id="g_directedTo">
+    <input name="entry.2138721097" id="g_studentNote">
+  </form>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+const FORM_FIELDS={requestId:'g_requestId',requestType:'g_requestType',fullName:'g_fullName',gender:'g_gender',department:'g_department',stage:'g_stage',studyType:'g_studyType',phone:'g_phone',email:'g_email',governorate:'g_governorate',address:'g_address',details:'g_details',reason:'g_reason',directedTo:'g_directedTo',studentNote:'g_studentNote'};
+const noReasonTypes=new Set(['استمرارية في الدوام','تأييد تخرج','براءة ذمة','فحص ومعالجة']);
+let lastData=null;
+function el(id){return document.getElementById(id)}
+function val(id){return (el(id)?.value||'').trim()}
+function msg(text,type='ok'){const box=el('message');box.textContent=text;box.className='message '+(type==='ok'?'ok':'err')}
+function requestId(){const d=new Date();const pad=n=>String(n).padStart(2,'0');const y=d.getFullYear();const stamp=`${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;const rnd=Math.floor(Math.random()*90+10);return `REQ-${y}-${stamp}${rnd}`}
+function dateText(){return new Date().toLocaleDateString('ar-IQ',{year:'numeric',month:'2-digit',day:'2-digit'})}
+function updateType(){const type=val('requestType');el('reasonBox').style.display=noReasonTypes.has(type)?'none':'flex';const box=el('extraInfoBox');const lab=el('extraInfoLabel');const input=el('extraInfo');box.hidden=true;input.value='';if(type==='رفع غياب'){box.hidden=false;lab.textContent='معلومات الغياب';input.placeholder='اكتب تاريخ الغياب، المادة، وعدد المحاضرات';}if(type==='استضافة'||type==='نقل'){box.hidden=false;lab.textContent='معلومات الاستضافة / النقل';input.placeholder='اكتب الجامعة أو الكلية أو القسم المطلوب';}if(type==='استمرارية في الدوام')el('details').value='أرجو تزويدي بتأييد استمرارية في الدوام لأغراض رسمية.';if(type==='تأييد تخرج')el('details').value='أرجو تزويدي بتأييد تخرج لأغراض رسمية.';if(type==='براءة ذمة')el('details').value='أرجو تزويدي ببراءة ذمة حسب الضوابط والتعليمات.';}
+function collect(){let details=val('details');const extra=val('extraInfo');if(extra)details += (details?'\n':'') + 'معلومات إضافية: '+extra;const type=val('requestType');return{requestId:requestId(),requestType:type,fullName:val('fullName'),gender:val('gender'),department:val('department'),stage:val('stage'),studyType:val('studyType'),phone:val('phone'),email:val('email'),governorate:val('governorate'),address:val('address'),details,reason:noReasonTypes.has(type)?'':val('reason'),directedTo:val('directedTo')||'عمادة كلية الهندسة',studentNote:val('studentNote'),dateText:dateText()}}
+function validate(d){if(!d.requestType||!d.fullName||!d.gender||!d.department||!d.stage||!d.studyType||!d.phone){msg('يرجى ملء الحقول المطلوبة.', 'err');return false}return true}
+function fillGoogleForm(d){Object.keys(FORM_FIELDS).forEach(k=>{el(FORM_FIELDS[k]).value=d[k]||''})}
+function fillPrint(d){document.querySelectorAll('[data-print]').forEach(n=>{const key=n.getAttribute('data-print');n.textContent=d[key]||''});el('printReasonBlock').style.display=d.reason?'block':'none'}
+function submitToGoogle(d){fillGoogleForm(d);el('googleFormSubmit').submit()}
+function showResult(d){el('requestIdPreview').textContent=d.requestId;el('resultPanel').hidden=false;el('resultPanel').scrollIntoView({behavior:'smooth',block:'center'})}
+el('requestType').addEventListener('change',updateType);
+el('resetBtn').addEventListener('click',()=>{el('studentRequestForm').reset();el('resultPanel').hidden=true;el('extraInfoBox').hidden=true;el('reasonBox').style.display='flex';msg('', 'ok');el('message').style.display='none'});
+el('studentRequestForm').addEventListener('submit',e=>{e.preventDefault();const d=collect();if(!validate(d))return;lastData=d;fillPrint(d);submitToGoogle(d);msg('تم حفظ الطلب وإرساله إلى الشيت. رقم الطلب جاهز للطباعة.', 'ok');showResult(d)});
+el('printBtn').addEventListener('click',()=>{if(!lastData){msg('لا توجد بيانات للطباعة.', 'err');return}fillPrint(lastData);setTimeout(()=>window.print(),150)});
+el('newBtn').addEventListener('click',()=>{el('studentRequestForm').reset();el('resultPanel').hidden=true;lastData=null;window.scrollTo({top:0,behavior:'smooth'})});
