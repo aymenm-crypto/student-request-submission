@@ -6,6 +6,6 @@
    المهم هنا ليس رابط الشيت ولا رابط Google Form.
    بعد نشر Apps Script كـ Web App، انسخ رابط /exec وضعه هنا.
    مثال:
-   window.STUDENT_REQUEST_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
+   window.STUDENT_REQUEST_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzU9ejStmL-CZpmX6JOatraIRjJjeC2kv0o4N6lPcKA2SSWA_A3mNE5t1NQH0AUsA78/exec';
    ========================================================= */
 window.STUDENT_REQUEST_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzU9ejStmL-CZpmX6JOatraIRjJjeC2kv0o4N6lPcKA2SSWA_A3mNE5t1NQH0AUsA78/exec';

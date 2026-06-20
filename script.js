@@ -1472,7 +1472,7 @@ function setupDashboardUI(){
   if (uploadGrid && !$('uploadRequestNo')) {
     const label = document.createElement('label');
     label.className = 'field';
-    label.innerHTML = '<span>رقم الطلب الأصلي <small style="font-weight:700;color:#64748b">اختياري</small></span><input id="uploadRequestNo" name="uploadRequestNo" placeholder="مثال: ENG-2026-00116">';
+    label.innerHTML = '<span>رقم الطلب <small style="font-weight:700;color:#64748b">اختياري</small></span><input id="uploadRequestNo" name="uploadRequestNo" placeholder="اكتبه إذا موجود فقط" dir="ltr">';
     uploadGrid.insertBefore(label, uploadGrid.firstChild);
   }
   ensureDashboardModal();
@@ -3734,12 +3734,8 @@ function setupServerBindings(){
           studentName: uploadNameInput ? uploadNameInput.value.trim() : '',
           file: $('uploadFile').files && $('uploadFile').files[0] ? await fileToObject($('uploadFile').files[0]) : null
         };
-        if (typeof google === 'undefined' || !google.script || !google.script.run) {
-          if ($('uploadInfo')) $('uploadInfo').textContent = 'تم تجهيز بيانات الرفع داخل الواجهة. الرفع الفعلي يحتاج ربط سكربت الرفع في الخطوة التالية.';
-          return;
-        }
         const result = await runServer('uploadCompletedRequest', payload);
-        if ($('uploadInfo')) $('uploadInfo').textContent = 'تم رفع الملف بنجاح. رقم المعاملة: ' + result.requestNo;
+        if ($('uploadInfo')) $('uploadInfo').textContent = result.message || ('تم رفع الملف بنجاح. رقم الرفع: ' + (result.uploadNo || result.requestNo || '')); 
         completedUploadForm.reset();
       } catch(err) {
         if ($('uploadInfo')) $('uploadInfo').textContent = err.message || 'تعذر رفع الملف.';
@@ -5106,7 +5102,7 @@ function setupServerBindings(){
     var grid = form.querySelector('.grid.two') || form;
     var label = document.createElement('label');
     label.className = 'field';
-    label.innerHTML = '<span>رقم الطلب</span><input id="uploadRequestNo" name="uploadRequestNo" placeholder="مثال: Eng.Reg.001" required dir="ltr">';
+    label.innerHTML = '<span>رقم الطلب <small style="font-weight:700;color:#64748b">اختياري</small></span><input id="uploadRequestNo" name="uploadRequestNo" placeholder="اكتبه إذا موجود فقط" dir="ltr">';
     grid.insertBefore(label, grid.firstChild);
   }
 
@@ -6737,4 +6733,31 @@ function setupServerBindings(){
     }
   };
   try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+})();
+
+
+
+/* V96 easy upload UI: رقم الطلب اختياري للتسهيل على الطالب */
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function patchUploadRequestNo(){
+    var req = byId('uploadRequestNo');
+    if (req) {
+      req.required = false;
+      req.dir = 'ltr';
+      req.placeholder = 'اختياري: اكتب رقم الطلب إذا موجود';
+      var lab = req.closest('label');
+      if (lab) {
+        var sp = lab.querySelector('span');
+        if (sp) sp.innerHTML = 'رقم الطلب <small style="font-weight:700;color:#64748b">اختياري</small>';
+      }
+    }
+    var info = byId('uploadInfo');
+    if (info && /لم يتم اختيار ملف/.test(info.textContent || '')) {
+      info.textContent = 'رقم الطلب اختياري. المطلوب: اسم الطالب، نوع الاستمارة، واختيار الملف فقط.';
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', patchUploadRequestNo);
+  else patchUploadRequestNo();
+  [300,800,1600,3000].forEach(function(ms){ setTimeout(patchUploadRequestNo, ms); });
 })();

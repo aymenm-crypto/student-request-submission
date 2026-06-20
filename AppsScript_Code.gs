@@ -1,5 +1,5 @@
 /**************************************************************
- * Google Apps Script backend for Student Requests Portal v94
+ * Google Apps Script backend for Student Requests Portal v95
  * يحفظ الطلبات في نفس الشيت ويرفع ملفات الطلبات الموقعة إلى Google Drive.
  *
  * الإعدادات المثبتة:
@@ -18,7 +18,7 @@ function appServer(req) {
 }
 
 function doGet(e) {
-  return json_({ ok: true, message: 'Student Requests Web App v94 is running.', time: new Date().toISOString() });
+  return json_({ ok: true, message: 'Student Requests Web App v95 is running.', time: new Date().toISOString() });
 }
 
 function doPost(e) {
@@ -26,7 +26,7 @@ function doPost(e) {
   let payload = {};
   let requestId = '';
   let responseMode = '';
-  let source = 'student-request-v94';
+  let source = 'student-request-v95';
 
   try {
     const p = (e && e.parameter) || {};
@@ -125,39 +125,64 @@ function uploadCompletedRequest_(payload) {
     const reqSh = getOrCreateSheet_(ss, REQUESTS_SHEET_NAME, requestHeaders_());
     const upSh = getOrCreateSheet_(ss, UPLOADS_SHEET_NAME, uploadHeaders_());
     const now = new Date();
-    const requestNo = String(payload.requestNo || '').trim() || nextUploadNo_(upSh);
-    const fileObj = payload.file || null;
-    let fileUrl = '';
-    let fileName = '';
-    let fileId = '';
 
-    if (fileObj && (fileObj.base64 || fileObj.data)) {
-      const folder = getUploadFolder_();
-      const raw = String(fileObj.base64 || fileObj.data || '').split(',').pop();
-      const bytes = Utilities.base64Decode(raw);
-      const safeName = cleanFileName_(requestNo + '_' + (payload.studentName || 'student') + '_' + (fileObj.name || 'signed_request.pdf'));
-      const blob = Utilities.newBlob(bytes, fileObj.mimeType || 'application/octet-stream', safeName);
-      const file = folder.createFile(blob);
-      fileName = file.getName();
-      fileUrl = file.getUrl();
-      fileId = file.getId();
+    const requestNoInput = String(payload.requestNo || '').trim();
+    const studentName = String(payload.studentName || '').trim();
+    const formTitle = String(payload.formTitle || '').trim();
+    const formCode = String(payload.formCode || '').trim();
+    const fileObj = payload.file || null;
+
+    if (!studentName) {
+      return { ok: false, message: 'يرجى إدخال اسم الطالب.' };
+    }
+    if (!formTitle) {
+      return { ok: false, message: 'يرجى اختيار نوع الاستمارة.' };
+    }
+    if (!fileObj || !(fileObj.base64 || fileObj.data)) {
+      return { ok: false, message: 'يرجى اختيار ملف PDF أو صورة للطلب الموقّع.' };
     }
 
+    let matched = null;
+    if (requestNoInput) {
+      matched = findRequestByNo_(reqSh, requestNoInput);
+      // للتسهيل على الطالب: إذا كتب رقم الطلب خطأ لا نرفض الرفع، فقط نحفظه كملف مرفوع غير مربوط.
+    }
+
+    const uploadNo = nextUploadNo_(upSh);
+    const finalRequestNo = matched ? requestNoInput : '';
+    const sheetStudentName = matched ? String(matched.object['اسم الطالب الرباعي'] || '').trim() : '';
+    const finalStudentName = sheetStudentName || studentName;
+
+    const folder = getUploadFolder_();
+    const raw = String(fileObj.base64 || fileObj.data || '').split(',').pop();
+    const bytes = Utilities.base64Decode(raw);
+    const baseNo = finalRequestNo || uploadNo;
+    const safeName = cleanFileName_(baseNo + '_' + (finalStudentName || 'student') + '_' + (fileObj.name || 'signed_request.pdf'));
+    const blob = Utilities.newBlob(bytes, fileObj.mimeType || 'application/octet-stream', safeName);
+    const file = folder.createFile(blob);
+    const fileName = file.getName();
+    const fileUrl = file.getUrl();
+    const fileId = file.getId();
+
+    const status = matched ? 'مرفوع' : 'مرفوع - غير مربوط';
     upSh.appendRow([
       now,
-      requestNo,
-      payload.formCode || '',
-      payload.formTitle || '',
-      payload.studentName || '',
+      finalRequestNo || uploadNo,
+      formCode,
+      formTitle,
+      finalStudentName,
       fileName,
       fileUrl,
       fileId,
-      'مرفوع'
+      status
     ]);
 
-    updateRequestUpload_(reqSh, requestNo, payload.studentName || '', fileName, fileUrl, now);
+    if (matched) {
+      updateRequestUploadByRow_(reqSh, matched.row, fileName, fileUrl, now);
+      return { ok: true, requestNo: finalRequestNo, uploadNo: uploadNo, fileUrl: fileUrl, fileName: fileName, message: 'تم رفع الملف وربطه بالطلب داخل الشيت.' };
+    }
 
-    return { ok: true, requestNo: requestNo, fileUrl: fileUrl, fileName: fileName, message: 'تم رفع الملف وحفظ رابطه داخل الشيت.' };
+    return { ok: true, requestNo: '', uploadNo: uploadNo, fileUrl: fileUrl, fileName: fileName, message: 'تم رفع الملف بنجاح. إذا لم يُكتب رقم الطلب أو كان غير صحيح فسيظهر في لوحة المتابعة كملف غير مربوط.' };
   } finally {
     lock.releaseLock();
   }
@@ -240,37 +265,56 @@ function getUploadFolder_() {
   return DriveApp.getFolderById(UPLOAD_FOLDER_ID);
 }
 
-function updateRequestUpload_(sh, requestNo, studentName, fileName, fileUrl, when) {
+function updateRequestUploadByRow_(sh, row, fileName, fileUrl, when) {
   const headers = getHeaders_(sh);
-  const noCol = headers.indexOf('رقم الطلب') + 1;
-  const nameCol = headers.indexOf('اسم الطالب الرباعي') + 1;
   const statusCol = headers.indexOf('الحالة') + 1;
   const fileNameCol = headers.indexOf('اسم الملف المرفوع') + 1;
   const fileUrlCol = headers.indexOf('رابط الملف المرفوع') + 1;
   const uploadDateCol = headers.indexOf('تاريخ الرفع') + 1;
-  let row = 0;
+  if (!row || row < 2) return;
+  if (statusCol > 0) sh.getRange(row, statusCol).setValue('مرفوع');
+  if (fileNameCol > 0) sh.getRange(row, fileNameCol).setValue(fileName);
+  if (fileUrlCol > 0) sh.getRange(row, fileUrlCol).setValue(fileUrl);
+  if (uploadDateCol > 0) sh.getRange(row, uploadDateCol).setValue(when || new Date());
+}
 
-  if (noCol > 0 && requestNo && sh.getLastRow() >= 2) {
-    const values = sh.getRange(2, noCol, sh.getLastRow() - 1, 1).getValues();
-    for (let i = 0; i < values.length; i++) {
-      if (String(values[i][0]).trim() === requestNo) { row = i + 2; break; }
+function updateRequestUpload_(sh, requestNo, studentName, fileName, fileUrl, when) {
+  const matched = findRequestByNo_(sh, requestNo);
+  if (matched) updateRequestUploadByRow_(sh, matched.row, fileName, fileUrl, when);
+}
+
+function findRequestByNo_(sh, requestNo) {
+  const headers = getHeaders_(sh);
+  const noCol = headers.indexOf('رقم الطلب') + 1;
+  if (!noCol || sh.getLastRow() < 2) return null;
+  const values = sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues();
+  for (let i = 0; i < values.length; i++) {
+    const rowNo = String(values[i][noCol - 1] || '').trim();
+    if (rowNo === String(requestNo || '').trim()) {
+      const obj = {};
+      headers.forEach((h, j) => obj[h] = values[i][j]);
+      return { row: i + 2, object: obj };
     }
   }
+  return null;
+}
 
-  // إذا لم يجد رقم الطلب، يحاول المطابقة بالاسم كحل احتياطي.
-  if (!row && nameCol > 0 && studentName && sh.getLastRow() >= 2) {
-    const values = sh.getRange(2, nameCol, sh.getLastRow() - 1, 1).getValues();
-    for (let i = values.length - 1; i >= 0; i--) {
-      if (String(values[i][0]).trim() === String(studentName).trim()) { row = i + 2; break; }
-    }
-  }
+function normalizeArabicName_(s) {
+  return String(s || '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[ًٌٍَُِّْـ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
 
-  if (row) {
-    if (statusCol > 0) sh.getRange(row, statusCol).setValue('مرفوع');
-    if (fileNameCol > 0) sh.getRange(row, fileNameCol).setValue(fileName);
-    if (fileUrlCol > 0) sh.getRange(row, fileUrlCol).setValue(fileUrl);
-    if (uploadDateCol > 0) sh.getRange(row, uploadDateCol).setValue(when || new Date());
-  }
+function sameName_(a, b) {
+  const x = normalizeArabicName_(a);
+  const y = normalizeArabicName_(b);
+  if (!x || !y) return false;
+  return x === y || x.indexOf(y) !== -1 || y.indexOf(x) !== -1;
 }
 
 function updateStatusByRequestNo_(sh, requestNo, status) {
@@ -331,7 +375,7 @@ function json_(obj) {
 function postMessage_(obj, requestId, source) {
   const safeJson = JSON.stringify(obj).replace(/</g, '\\u003c');
   const safeReq = JSON.stringify(requestId || '');
-  const safeSource = JSON.stringify(source || 'student-request-v94');
+  const safeSource = JSON.stringify(source || 'student-request-v95');
   const html = '<!doctype html><html><head><meta charset="utf-8"><script id="student-request-result" type="application/json">' + safeJson + '</script></head><body><script>try{window.top.postMessage({source:' + safeSource + ',requestId:' + safeReq + ',result:' + safeJson + '},"*");}catch(e){}<\/script></body></html>';
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
