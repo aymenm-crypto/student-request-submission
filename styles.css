@@ -8982,3 +8982,80 @@ body.pdf-render-mode{background:#fff!important;}
   display:none !important;
   content:none !important;
 }
+
+/* =========================================================
+   V79 TARGETED PATCH ONLY
+   - Continuity stage choices larger/readable only.
+   - Remove extra signature line in petition official boxes only.
+   - Keep all other templates unchanged.
+   ========================================================= */
+body.print-mode-active.print-form-continuity #formPage .continuity-stage-cell,
+.print-form-continuity .continuity-stage-cell,
+.continuity-onepage .continuity-stage-cell{
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-align:center!important;
+  padding:0.55mm 0.45mm!important;
+}
+body.print-mode-active.print-form-continuity #formPage .continuity-stage-cell .stage-print-option,
+.print-form-continuity .continuity-stage-cell .stage-print-option,
+.continuity-onepage .continuity-stage-cell .stage-print-option{
+  font-size:8.15pt!important;
+  line-height:1!important;
+  margin:0 .16mm!important;
+  gap:.26mm!important;
+  letter-spacing:-.12px!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  align-items:center!important;
+  vertical-align:middle!important;
+}
+body.print-mode-active.print-form-continuity #formPage .continuity-stage-cell .stage-print-option span,
+.print-form-continuity .continuity-stage-cell .stage-print-option span,
+.continuity-onepage .continuity-stage-cell .stage-print-option span{
+  font-size:inherit!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+body.print-mode-active.print-form-continuity #formPage .continuity-stage-cell .square-mark,
+.print-form-continuity .continuity-stage-cell .square-mark,
+.continuity-onepage .continuity-stage-cell .square-mark{
+  width:2.65mm!important;
+  height:2.65mm!important;
+  min-width:2.65mm!important;
+  max-width:2.65mm!important;
+  font-size:6.4pt!important;
+  line-height:2.45mm!important;
+  margin:0 .18mm!important;
+  border-width:.9px!important;
+}
+@media print{
+  body.print-mode-active.print-form-continuity #formPage .continuity-stage-cell .stage-print-option,
+  .print-form-continuity .continuity-stage-cell .stage-print-option,
+  .continuity-onepage .continuity-stage-cell .stage-print-option{font-size:8.0pt!important;gap:.22mm!important;margin:0 .12mm!important;}
+  body.print-mode-active.print-form-continuity #formPage .continuity-stage-cell .square-mark,
+  .print-form-continuity .continuity-stage-cell .square-mark,
+  .continuity-onepage .continuity-stage-cell .square-mark{width:2.55mm!important;height:2.55mm!important;min-width:2.55mm!important;line-height:2.35mm!important;font-size:6pt!important;}
+}
+
+/* Remove only the extra horizontal signature line inside the approval boxes of return/dismissal/nonfail. */
+body.print-mode-active.print-form-return #formPage .petition-v76 .official-free-sign-area,
+body.print-mode-active.print-form-dismissal #formPage .petition-v76 .official-free-sign-area,
+body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-free-sign-area,
+.print-form-return .petition-v76 .official-free-sign-area,
+.print-form-dismissal .petition-v76 .official-free-sign-area,
+.print-form-nonfail .petition-v76 .official-free-sign-area{
+  border-bottom:0!important;
+  border-top:0!important;
+  box-shadow:none!important;
+  background-image:none!important;
+}
+body.print-mode-active.print-form-return #formPage .petition-v76 .official-free-sign-area::before,
+body.print-mode-active.print-form-return #formPage .petition-v76 .official-free-sign-area::after,
+body.print-mode-active.print-form-dismissal #formPage .petition-v76 .official-free-sign-area::before,
+body.print-mode-active.print-form-dismissal #formPage .petition-v76 .official-free-sign-area::after,
+body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-free-sign-area::before,
+body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-free-sign-area::after{
+  display:none!important;
+  content:none!important;
+}

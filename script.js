@@ -5769,3 +5769,93 @@ function setupServerBindings(){
     }
   }, true);
 })();
+
+/* =========================================================
+   V79 TARGETED PATCH ONLY
+   - Mobile: print through an isolated about:blank print page, not PDF capture.
+   - Hosting card/button: robust open fix.
+   - No template rebuilds here.
+   ========================================================= */
+(function(){
+  function isMobileV79(){
+    var ua = navigator.userAgent || '';
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || ((navigator.maxTouchPoints||0)>1 && /Macintosh/i.test(ua)) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches && window.innerWidth < 1200);
+  }
+  function formClassV79(){
+    try { return (activeForm && activeForm.id) ? 'print-form-' + activeForm.id : ''; } catch(e) { return ''; }
+  }
+  function orientationV79(){
+    try { return (activeForm && activeForm.pageOrientation === 'landscape') ? 'landscape' : 'portrait'; } catch(e) { return 'portrait'; }
+  }
+  function stylesUrlV79(){
+    try { return new URL('styles.css?v=79', location.href).href; } catch(e) { return 'styles.css?v=79'; }
+  }
+  function writeAndPrintV79(win){
+    if (!win) return false;
+    var src = document.getElementById('printArea');
+    if (!src || !src.innerHTML.trim()) return false;
+    try { if (typeof applyAutoFit === 'function') applyAutoFit(src); } catch(e) {}
+    var cls = formClassV79();
+    var orient = orientationV79();
+    var pageCss = orient === 'landscape'
+      ? '@page{size:A4 landscape;margin:0} html,body{margin:0!important;padding:0!important;background:#fff!important;width:297mm!important;min-height:210mm!important;overflow:hidden!important}'
+      : '@page{size:A4 portrait;margin:0} html,body{margin:0!important;padding:0!important;background:#fff!important;width:210mm!important;min-height:297mm!important;overflow:hidden!important}';
+    var html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>طباعة الاستمارة</title>'+
+      '<link rel="stylesheet" href="'+stylesUrlV79()+'">'+
+      '<style>'+pageCss+' body{direction:rtl!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important} #formPage{display:block!important;margin:0!important;padding:0!important;background:#fff!important} #printArea{display:block!important;margin:0 auto!important;padding:0!important;background:#fff!important} .form-sheet,.paper,.official-paper{box-shadow:none!important;margin:0 auto!important} @media print{html,body{overflow:hidden!important}.no-print,.toolbar,.topbar{display:none!important}}</style>'+ 
+      '</head><body class="print-mode-active '+cls+'"><section id="formPage"><div id="printArea">'+src.innerHTML+'</div></section><script>setTimeout(function(){try{window.focus();window.print();}catch(e){}},650);<\/script></body></html>';
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    return true;
+  }
+  function printMobileIsolatedV79(preWin){
+    var ok = writeAndPrintV79(preWin);
+    if (!ok) { try { printCurrentPreview(); } catch(e) {} }
+  }
+
+  // Mobile uses isolated print page; desktop keeps original print.
+  window.saveAndPrintCurrentRequest = saveAndPrintCurrentRequest = async function(){
+    var mobile = isMobileV79();
+    var preWin = null;
+    if (mobile) {
+      try { preWin = window.open('', '_blank'); } catch(e) { preWin = null; }
+    }
+    try {
+      var result = await saveActiveRequest({ mode:'print', force:true });
+      if (!result || result.ok !== true) throw new Error('تعذر تجهيز رقم الطلب.');
+      if (mobile) printMobileIsolatedV79(preWin);
+      else printCurrentPreview();
+    } catch(err) {
+      try { if (preWin && !preWin.closed) preWin.close(); } catch(e) {}
+      var st = document.getElementById('submitStatus');
+      if (st) st.textContent = (err && err.message) ? err.message : 'تعذر تجهيز الطباعة.';
+      try { printCurrentPreview(); } catch(e) {}
+    }
+  };
+
+  // Stronger hosting open patch: works even if the original card/button listener fails.
+  function getFormsV79(){ try { return (typeof forms !== 'undefined' && Array.isArray(forms)) ? forms : (Array.isArray(window.forms) ? window.forms : []); } catch(e) { return []; } }
+  function findHostingV79(){
+    return getFormsV79().find(function(f){
+      var id = String(f.id || '').toLowerCase();
+      var t = String(f.title || '') + ' ' + String(f.purpose || '') + ' ' + String(f.desc || '');
+      return id === 'hosting' || t.indexOf('استضاف') > -1 || t.indexOf('الاستضافة') > -1;
+    });
+  }
+  function openHostingV79(){
+    var f = findHostingV79();
+    if (f && typeof openForm === 'function') { openForm(f); return true; }
+    return false;
+  }
+  window.openHostingV79 = openHostingV79;
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('button,.open-form-btn,.card,[data-id]') : null;
+    if (!el) return;
+    var txt = String(el.textContent || '');
+    var id = el.getAttribute ? String(el.getAttribute('data-id') || '') : '';
+    if (id === 'hosting' || txt.indexOf('استضاف') > -1 || txt.indexOf('الاستضافة') > -1) {
+      if (openHostingV79()) { e.preventDefault(); e.stopImmediatePropagation(); }
+    }
+  }, true);
+})();
