@@ -8282,5 +8282,6 @@ body.dark .dashboard-pro-v8 .dashboard-user strong, .dashboard-pro-v8.dashboard-
 body.dark .dashboard-pro-v8 .dashboard-system-credit span, .dashboard-pro-v8.dashboard-dark .dashboard-system-credit span,
 body.dark .dashboard-pro-v8 .dashboard-developer-mini span, .dashboard-pro-v8.dashboard-dark .dashboard-developer-mini span{color:#f8fafc!important;}
 
-/* GitHub Pages forms-only adjustments */
-#uploadPage,#dashboardOpenBtn,.dashboard-entry-btn{display:none!important;}
+/* GitHub Pages: request forms only */
+#uploadPage, #dashboardOpenBtn, .dashboard-entry-btn { display:none !important; }
+.hero-actions { justify-content:center; }
