@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>رفع النسخة الموقعة</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="screen no-print">
+    <header class="topbar">
+      <div class="logo university-logo" aria-label="شعار الجامعة">جامعة<br>كربلاء</div>
+      <div class="brand-text">
+        <div class="ministry">وزارة التعليم العالي والبحث العلمي</div>
+        <h1>البوابة الإلكترونية للطلبات الطلابية</h1>
+        <div class="college">جامعة كربلاء - كلية الهندسة</div>
+      </div>
+      <div class="logo college-logo" aria-label="شعار الكلية">كلية<br>الهندسة</div>
+    </header>
+
+    <main class="layout">
+      <section class="form-card">
+        <div class="card-title">
+          <span class="icon">📤</span>
+          <div>
+            <h2>رفع النسخة الموقعة والمختومة</h2>
+            <p>اكتب رقم الطلب الموجود في الاستمارة، ثم افتح نموذج الرفع لإرفاق الملف.</p>
+          </div>
+        </div>
+
+        <form id="uploadPrepareForm" autocomplete="on">
+          <div class="grid">
+            <label class="field wide">
+              <span>رقم الطلب <b>*</b></span>
+              <input id="uRequestId" name="requestId" type="text" required dir="ltr" placeholder="مثال: REQ-2026-0620-15302512">
+            </label>
+
+            <label class="field wide">
+              <span>اسم الطالب الرباعي <b>*</b></span>
+              <input id="uFullName" name="fullName" type="text" required placeholder="اكتب الاسم الرباعي">
+            </label>
+
+            <label class="field wide">
+              <span>رقم الهاتف <b>*</b></span>
+              <input id="uPhone" name="phone" type="tel" inputmode="tel" required placeholder="07xxxxxxxxx">
+            </label>
+
+            <label class="field wide">
+              <span>ملاحظات الطالب</span>
+              <textarea id="uNote" name="note" rows="3" placeholder="اختياري"></textarea>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="primary">فتح نموذج الرفع الرسمي</button>
+            <a class="button-link secondary" href="index.html">الرجوع إلى التقديم</a>
+          </div>
+        </form>
+
+        <div class="upload-open-box">
+          <strong>تنبيه مهم:</strong><br>
+          رفع الملف يتم داخل Google Form الرسمي؛ لأن حقل رفع الملفات في Google Forms يتطلب تسجيل الدخول بحساب Google. بعد فتح النموذج، اختَر ملف PDF أو صورة واضحة للنسخة الموقعة والمختومة.
+        </div>
+      </section>
+
+      <aside class="side-card">
+        <h3>خطوات الرفع</h3>
+        <ol>
+          <li>اطبع الاستمارة من رابط التقديم.</li>
+          <li>وقّعها وختمها حسب المتطلبات.</li>
+          <li>ادخل رقم الطلب الموجود أعلى الاستمارة أو أسفلها.</li>
+          <li>افتح نموذج الرفع الرسمي وارفع الملف.</li>
+        </ol>
+        <div class="notice">
+          لا ترسل طلبًا بدون رقم الطلب؛ لأن المتابعة تعتمد على مطابقة رقم الطلب بين شيت التقديم وشيت الرفع.
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const UPLOAD_FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSfuZs3aOEagLBsybr4-_XCJZ2FjODZxb6qN0D8JEIRxw-pBzw/viewform?usp=pp_url';
+    const UPLOAD_ENTRIES = {
+      requestId: 'entry.1381347087',
+      fullName: 'entry.1235853166',
+      phone: 'entry.1614964808',
+      note: 'entry.1727894389'
+    };
+    function q(id){ return document.getElementById(id); }
+    function getParam(name){ return new URLSearchParams(location.search).get(name) || ''; }
+    function buildUploadUrl(){
+      const params = new URLSearchParams();
+      params.set(UPLOAD_ENTRIES.requestId, q('uRequestId').value.trim());
+      params.set(UPLOAD_ENTRIES.fullName, q('uFullName').value.trim());
+      params.set(UPLOAD_ENTRIES.phone, q('uPhone').value.trim());
+      params.set(UPLOAD_ENTRIES.note, q('uNote').value.trim());
+      return UPLOAD_FORM_BASE + '&' + params.toString();
+    }
+    window.addEventListener('load', () => {
+      q('uRequestId').value = getParam('requestId');
+      q('uFullName').value = getParam('name');
+      q('uPhone').value = getParam('phone');
+    });
+    q('uploadPrepareForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if(!q('uRequestId').value.trim() || !q('uFullName').value.trim() || !q('uPhone').value.trim()){
+        alert('يرجى ملء رقم الطلب والاسم ورقم الهاتف.');
+        return;
+      }
+      window.open(buildUploadUrl(), '_blank', 'noopener');
+    });
+  </script>
+</body>
+</html>

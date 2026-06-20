@@ -12,7 +12,7 @@ function validate(d){if(!d.requestType||!d.fullName||!d.gender||!d.department||!
 function fillGoogleForm(d){Object.keys(FORM_FIELDS).forEach(k=>{el(FORM_FIELDS[k]).value=d[k]||''})}
 function fillPrint(d){document.querySelectorAll('[data-print]').forEach(n=>{const key=n.getAttribute('data-print');n.textContent=d[key]||''});el('printReasonBlock').style.display=d.reason?'block':'none'}
 function submitToGoogle(d){fillGoogleForm(d);el('googleFormSubmit').submit()}
-function showResult(d){el('requestIdPreview').textContent=d.requestId;el('resultPanel').hidden=false;el('resultPanel').scrollIntoView({behavior:'smooth',block:'center'})}
+function showResult(d){el('requestIdPreview').textContent=d.requestId;const u=el('uploadAfterPrint');if(u){u.href='upload.html?requestId='+encodeURIComponent(d.requestId)+'&name='+encodeURIComponent(d.fullName||'')+'&phone='+encodeURIComponent(d.phone||'')}el('resultPanel').hidden=false;el('resultPanel').scrollIntoView({behavior:'smooth',block:'center'})}
 el('requestType').addEventListener('change',updateType);
 el('resetBtn').addEventListener('click',()=>{el('studentRequestForm').reset();el('resultPanel').hidden=true;el('extraInfoBox').hidden=true;el('reasonBox').style.display='flex';msg('', 'ok');el('message').style.display='none'});
 el('studentRequestForm').addEventListener('submit',e=>{e.preventDefault();const d=collect();if(!validate(d))return;lastData=d;fillPrint(d);submitToGoogle(d);msg('تم حفظ الطلب وإرساله إلى الشيت. رقم الطلب جاهز للطباعة.', 'ok');showResult(d)});
