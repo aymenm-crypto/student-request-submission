@@ -4,6 +4,28 @@ const departments = [
 ];
 const studyTypes = ['الصباحية','المسائية'];
 const stages = ['الأولى','الثانية','الثالثة','الرابعة','الخامسة'];
+const fiveStageDepartments = ['هندسة العمارة','هندسة الطب حياتي'];
+function cleanDeptName(v){ return String(v == null ? '' : v).replace(/\s+/g,' ').trim(); }
+function departmentHasFifthStage(dept){ return fiveStageDepartments.includes(cleanDeptName(dept)); }
+function stagesForDepartment(dept){
+  const d = cleanDeptName(dept);
+  if (!d) return stages.slice();
+  return departmentHasFifthStage(d) ? stages.slice() : stages.slice(0,4);
+}
+function renderStageOptions(data, extraClass){
+  const arr = stagesForDepartment(data && data.department);
+  return arr.map(v => `<span class="stage-print-option ${extraClass || ''}">${squareMark(data && data.stage===v)} <span>${escapeHtml(v)}</span></span>`).join(' ');
+}
+function updateStageSelectByDepartment(){
+  const stageEl = $('stageSelect');
+  if (!stageEl) return;
+  const deptEl = $('departmentSelect');
+  const current = stageEl.value;
+  const opts = stagesForDepartment(deptEl ? deptEl.value : '');
+  fillSelect(stageEl, opts, 'اختر المرحلة');
+  if (current && opts.includes(current)) stageEl.value = current;
+  else if (current === 'الخامسة') stageEl.value = '';
+}
 
 const departmentEnglishMap = {
   'هندسة العمارة':'Architecture Engineering Department',
@@ -353,6 +375,18 @@ function updateDependentFields(){
   const form = activeForm;
   const main = $('mainForm');
   if (!form || !main) return;
+  if (form.id === 'hosting') {
+    const fromEl = main.elements['fromStudy'];
+    const toEl = main.elements['toStudy'];
+    if (fromEl && toEl) {
+      const fromVal = normalizeStudy(fromEl.value);
+      const toVal = normalizeStudy(toEl.value);
+      if (fromVal && toVal && fromVal === toVal) {
+        toEl.value = fromVal === 'الدراسة الصباحية' ? 'المسائية' : 'الصباحية';
+      }
+    }
+    return;
+  }
   if (form.id !== 'deferment') return;
   const scopeEl = main.elements['deferScope'];
   const semEl = main.elements['semester'];
@@ -366,8 +400,9 @@ function updateDependentFields(){
 function init(){
   fillSelect($('departmentSelect'), departments, 'اختر القسم');
   fillSelect($('studyTypeSelect'), studyTypes, 'اختر الدراسة');
-  fillSelect($('stageSelect'), stages, 'اختر المرحلة');
+  updateStageSelectByDepartment();
   fillSelect($('uploadFormType'), forms.map(f => f.title), 'اختر نوع الاستمارة');
+  if ($('departmentSelect')) $('departmentSelect').addEventListener('change', updateStageSelectByDepartment);
   if ($('todayDate')) $('todayDate').textContent = currentArabicDate();
   const brandLogoEls = Array.from(document.querySelectorAll('.brand-logos img'));
   printLogoSrc = brandLogoEls[0] ? brandLogoEls[0].src : '';
@@ -498,6 +533,15 @@ function getFormData(){
   const data = Object.fromEntries(fd.entries());
   (activeForm?.fields || []).forEach(([key]) => { if (!(key in data)) data[key] = ''; });
   ['studyType','studyShift','fromStudy','toStudy'].forEach(k => { if (k in data) data[k] = normalizeStudy(data[k]); });
+  if (activeForm && activeForm.id === 'hosting') {
+    // الاستضافة لا تقبل صباحي→صباحي أو مسائي→مسائي.
+    // إذا اختار الطالب نفس الدراسة بالخطأ، نحول الوجهة تلقائياً إلى المقابلة.
+    if (data.fromStudy && data.toStudy && data.fromStudy === data.toStudy) {
+      data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
+    }
+    if (data.fromStudy && !data.toStudy) data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
+    if (!data.fromStudy && data.toStudy) data.fromStudy = data.toStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
+  }
   if (activeForm?.printType === 'continuity') {
     data.destination = data.directedTo || '';
     data.purposeReason = data.purpose || '';
@@ -572,15 +616,25 @@ function hostHeader(){
     <div class="host-separator"></div>`;
 }
 function topInfoRow(cells){
-  const chunks = [];
-  const perRow = cells.length > 4 ? 3 : cells.length;
-  for (let i = 0; i < cells.length; i += perRow) chunks.push(cells.slice(i, i + perRow));
-  const rows = chunks.map(row => {
-    let html = row.map(cell => `<th>${escapeHtml(cell[0])}</th><td>${cell[1]}</td>`).join('');
-    while (row.length < perRow) { html += '<th class="blank-cell">&nbsp;</th><td class="blank-cell">&nbsp;</td>'; row.push(['','']); }
-    return `<tr>${html}</tr>`;
+  // FINAL: one balanced information row for all committee-style forms.
+  // This removes the empty/colored lower cells that appeared under الهاتف in deferment/absence/exam-delay.
+  const normalized = (cells || []).filter(Boolean);
+  const count = normalized.length;
+  const widths5 = ['8%','19%','7%','20%','7%','13%','6%','8%','7%','5%'];
+  const widths4 = ['9%','25%','8%','24%','8%','16%','6%','4%'];
+  const widths = count >= 5 ? widths5 : widths4;
+  const colgroup = '<colgroup>' + widths.map(w => `<col style="width:${w}">`).join('') + '</colgroup>';
+  let rowHtml = normalized.map((cell, idx) => {
+    const key = String(cell[0] || '');
+    let cls = '';
+    if (key.includes('اسم')) cls = ' top-name-cell';
+    if (key.includes('قسم') || key.includes('القسم')) cls = ' top-dept-cell';
+    if (key.includes('هاتف')) cls = ' top-phone-cell';
+    if (key.includes('مرحلة')) cls = ' top-stage-cell';
+    if (key.includes('دراسة')) cls = ' top-study-cell';
+    return `<th class="top-label-${idx}">${escapeHtml(key)}</th><td class="top-value-${idx}${cls}">${cell[1]}</td>`;
   }).join('');
-  return `<table class="outline-table top-info-row smart-top-info">${rows}</table>`;
+  return `<table class="outline-table top-info-row smart-top-info one-row-top-info topinfo-${count}">${colgroup}<tr>${rowHtml}</tr></table>`;
 }
 function reasonsListHtml(data){
   return `<ol class="reason-list fixed-three">${reasonValues(data).map(v => `<li>${v}</li>`).join('')}</ol>`;
@@ -672,7 +726,7 @@ function renderContinuityForm(form, data){
       </tr>
       <tr>
         <th>القسم العلمي</th><td class="continuity-department-cell">${fitDepartment(data.department)}</td>
-        <th>المرحلة</th><td class="option-row continuity-stage-cell">${['الأولى','الثانية','الثالثة','الرابعة','الخامسة'].map(v => `${squareMark(data.stage===v)} ${escapeHtml(v)}`).join(' ')}</td>
+        <th>المرحلة</th><td class="option-row continuity-stage-cell">${renderStageOptions(data, 'continuity-stage-opt')}</td>
       </tr>
       <tr>
         <th>رقم الهاتف</th><td class="continuity-phone-cell">${fitPhone(data.phone)}</td>
@@ -888,7 +942,7 @@ function renderClearanceForm(form, data){
       </tr>
       <tr>
         <th>القسم العلمي</th><td>${fitDepartment(data.department)}</td>
-        <th>المرحلة</th><td class="option-row">${['الأولى','الثانية','الثالثة','الرابعة','الخامسة'].map(v => `${squareMark(data.stage===v)} ${escapeHtml(v)}`).join(' ')}</td>
+        <th>المرحلة</th><td class="option-row">${renderStageOptions(data, 'continuity-stage-opt')}</td>
       </tr>
       <tr>
         <th>رقم الهاتف</th><td>${fitPhone(data.phone)}</td>
@@ -4903,6 +4957,11 @@ function setupServerBindings(){
         (activeForm.fields || []).forEach(function(item){ var key = item[0]; if (!(key in data)) data[key] = ''; });
       }
       ['studyType','studyShift','fromStudy','toStudy'].forEach(function(k){ if (k in data && typeof normalizeStudy === 'function') data[k] = normalizeStudy(data[k]); });
+      if (activeForm && activeForm.id === 'hosting') {
+        if (data.fromStudy && data.toStudy && data.fromStudy === data.toStudy) data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
+        if (data.fromStudy && !data.toStudy) data.toStudy = data.fromStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
+        if (!data.fromStudy && data.toStudy) data.fromStudy = data.toStudy === 'الدراسة الصباحية' ? 'الدراسة المسائية' : 'الدراسة الصباحية';
+      }
       if (typeof activeForm !== 'undefined' && activeForm && activeForm.printType === 'continuity') {
         data.destination = data.directedTo || '';
         data.purposeReason = data.purpose || '';

@@ -8666,3 +8666,284 @@ body.print-popup-onepage #printArea>*{margin:0 auto!important;page-break-before:
     padding:2.5px 3.5px!important;
   }
 }
+
+/* v73: stage row optimization - fifth stage only for architecture and biomedical */
+.stage-print-option{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:0.65mm !important;
+  white-space:nowrap !important;
+  margin-inline:0.9mm !important;
+  font-weight:700 !important;
+}
+.stage-print-option .square-mark,
+.continuity-stage-cell .square-mark,
+.exact-clearance-info .option-row .square-mark{
+  width:15px !important;
+  height:15px !important;
+  min-width:15px !important;
+  font-size:10px !important;
+  border-width:1.35px !important;
+}
+.continuity-stage-cell{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  font-size:13.2px !important;
+  letter-spacing:-0.15px !important;
+  padding-inline:1.2mm !important;
+}
+.exact-continuity-info th,
+.exact-continuity-info td{
+  vertical-align:middle !important;
+}
+@media print{
+  .stage-print-option{ gap:0.45mm !important; margin-inline:0.55mm !important; }
+  .stage-print-option .square-mark,
+  .continuity-stage-cell .square-mark,
+  .exact-clearance-info .option-row .square-mark{
+    width:13px !important;
+    height:13px !important;
+    min-width:13px !important;
+    font-size:9px !important;
+    border-width:1.15px !important;
+  }
+  .continuity-stage-cell{font-size:12.2px !important; padding-inline:0.8mm !important;}
+}
+
+
+
+/* ==========================================================
+   FINAL BATCH FIX v74 - print templates only
+   ملاحظات مجمعة:
+   - توحيد جداول المعلومات العليا ومنع خروج اللون تحت الخلايا.
+   - ترتيب التخفيض/التأجيل/الغياب/تأجيل الامتحان بنفس منطق الجدول العلوي.
+   - منع التفاف الاسم والقسم والهاتف قدر الإمكان مع تصغير خط داخل الخلية.
+   - الاستضافة: منع صباحي→صباحي أو مسائي→مسائي، وضبط السطر والتواقيع.
+   - براءة الذمة: استثمار الفراغ السفلي بتكبير مربعات الأقسام.
+   - عودة/ترقين/عدم رسوب: عناوين التأييد على الطرف لترك مجال للختم.
+   - فحص ومعالجة: استغلال عرض الورقة وتقليل الفراغ الجانبي.
+   ========================================================== */
+
+/* 1) جدول المعلومات العلوي في استمارات اللجان */
+.smart-top-info.one-row-top-info{
+  width:100% !important;
+  table-layout:fixed !important;
+  border-collapse:collapse !important;
+  margin:0 0 2.2mm 0 !important;
+  page-break-inside:avoid !important;
+  break-inside:avoid !important;
+  direction:rtl !important;
+}
+.smart-top-info.one-row-top-info tr{height:7.3mm !important;}
+.smart-top-info.one-row-top-info th,
+.smart-top-info.one-row-top-info td{
+  height:7.3mm !important;
+  max-height:7.3mm !important;
+  min-height:0 !important;
+  padding:1.1mm 1.25mm !important;
+  line-height:1.05 !important;
+  vertical-align:middle !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  text-overflow:clip !important;
+  border:1px solid #8d98a5 !important;
+  background-clip:padding-box !important;
+}
+.smart-top-info.one-row-top-info th{
+  background:#e8eef7 !important;
+  font-size:9.3px !important;
+  font-weight:900 !important;
+  color:#0f172a !important;
+}
+.smart-top-info.one-row-top-info td{
+  background:#fff !important;
+  font-size:9.2px !important;
+  font-weight:800 !important;
+  text-align:center !important;
+}
+.smart-top-info.one-row-top-info .top-name-cell .fit-student{font-size:8.7px !important;letter-spacing:-.45px !important;}
+.smart-top-info.one-row-top-info .top-dept-cell .fit-department{font-size:7.6px !important;letter-spacing:-.65px !important;}
+.smart-top-info.one-row-top-info .top-phone-cell .fit-phone{font-size:8.8px !important;direction:ltr !important;}
+.smart-top-info.one-row-top-info .top-stage-cell .fit-short,
+.smart-top-info.one-row-top-info .top-study-cell .fit-short{font-size:8.8px !important;}
+.smart-top-info.one-row-top-info .blank-cell{display:none !important;background:#fff !important;border:0 !important;padding:0 !important;height:0 !important;}
+
+/* إزالة أي أثر لون نازل أسفل رقم الهاتف أو الخلايا في التأجيل/الغياب/التخفيض/تأجيل الامتحان */
+.deferment-sheet .smart-top-info,
+.absence-sheet .smart-top-info,
+.evening-fees-sheet .smart-top-info,
+.gov-fees-sheet .smart-top-info,
+.exam-delay-sheet .smart-top-info{
+  overflow:hidden !important;
+  background:#fff !important;
+}
+.deferment-sheet .smart-top-info + .request-table,
+.absence-sheet .smart-top-info + .request-table,
+.evening-fees-sheet .smart-top-info + .request-table,
+.gov-fees-sheet .smart-top-info + .request-table,
+.exam-delay-sheet .smart-top-info + .request-table{
+  margin-top:1.2mm !important;
+}
+
+/* 2) ضغط استمارات اللجان حتى تبقى صفحة واحدة مع جدول علوي أوضح */
+.committee-sheet .request-cell{min-height:148px !important;padding:8px 10px 7px !important;}
+.committee-sheet .request-intro{font-size:12.4px !important;line-height:1.55 !important;margin-bottom:1.2mm !important;}
+.committee-sheet .fixed-three{min-height:60px !important;margin:0 !important;padding-right:18px !important;}
+.committee-sheet .fixed-three li{min-height:15px !important;line-height:1.3 !important;margin:0 0 1px !important;}
+.committee-sheet .request-sign-right{font-size:11.8px !important;line-height:1.45 !important;margin-top:2mm !important;width:45mm !important;}
+.committee-sheet .committee-undertaking{font-size:11.4px !important;line-height:1.38 !important;margin:1.2mm 0 !important;}
+.committee-sheet .review-stack-cell{min-height:22mm !important;padding:6px 8px !important;font-size:12.4px !important;}
+.committee-sheet .fee-merged-title{font-size:12px !important;padding:5px 8px !important;}
+.committee-sheet .fee-merged-body{min-height:22mm !important;}
+.committee-sheet .academic-reg-cell,
+.committee-sheet .finance-box{min-height:31mm !important;font-size:11.6px !important;padding:6px 7px !important;}
+.committee-sheet .dean-box-expanded{min-height:20mm !important;font-size:12.8px !important;padding:6px 8px !important;}
+.committee-sheet .council-box{min-height:23mm !important;font-size:12.2px !important;padding:6px 8px !important;}
+
+/* 3) براءة الذمة: تكبير مربعات الأقسام واستغلال الفراغ الأبيض */
+.exact-clearance-sheet{min-height:284mm !important;padding-bottom:1.5mm !important;}
+.exact-clearance-info th,.exact-clearance-info td{height:7.1mm !important;padding:1.4mm 1.6mm !important;}
+.exact-clearance-grid{
+  flex:1 1 auto !important;
+  min-height:198mm !important;
+  grid-template-rows:repeat(3, 1fr) !important;
+  gap:2.4mm !important;
+  margin-top:1.4mm !important;
+}
+.exact-clearance-grid .clear-box{
+  min-height:61mm !important;
+  padding:4mm 5mm 3.5mm !important;
+  border-radius:15px !important;
+}
+.exact-clearance-grid .clear-spacer{min-height:34mm !important;flex:1 1 auto !important;}
+.exact-clearance-sheet .clearance-bottom-note{margin-top:1.4mm !important;font-size:10.5px !important;}
+.exact-clearance-sheet .clearance-footer-strip{display:none !important;}
+
+/* 4) عودة/ترقين/عدم رسوب: عناوين التأييد بالطرف ومجال توقيع أكبر */
+.petition-official-approval-grid .official-approval-box{
+  min-height:50mm !important;
+  padding:3.5mm 5mm 3mm !important;
+  justify-content:space-between !important;
+}
+.petition-official-approval-grid .official-approval-title{
+  align-self:flex-start !important;
+  text-align:right !important;
+  width:auto !important;
+  max-width:70mm !important;
+  font-size:13.2px !important;
+  line-height:1.35 !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+.petition-official-approval-grid .official-approval-footer{
+  margin-top:auto !important;
+  font-size:13.2px !important;
+  line-height:1.4 !important;
+  padding-top:2mm !important;
+}
+.petition-signature-block{bottom:88mm !important;font-size:13.2px !important;line-height:1.55 !important;}
+
+/* 5) الاستضافة: ضبط سطر من/إلى، ومنع نفس الدراسة، ومجال توقيع منظم */
+.hosting-line-transfer.hosting-transfer-box{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:2mm !important;
+  line-height:1.3 !important;
+  min-height:8mm !important;
+}
+.hosting-line-transfer.hosting-transfer-box .host-label,
+.hosting-line-transfer.hosting-transfer-box .host-study-fill{
+  line-height:1.3 !important;
+  vertical-align:middle !important;
+  position:static !important;
+  top:auto !important;
+  transform:none !important;
+}
+.hosting-review-grid-exact{grid-template-columns:1.25fr .9fr !important;gap:10px !important;}
+.hosting-sign-col-exact{
+  min-height:30mm !important;
+  padding-top:10mm !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-end !important;
+  gap:1.4mm !important;
+  line-height:1.35 !important;
+}
+.hosting-review-section-exact{margin-top:9px !important;padding-top:8px !important;}
+.hosting-review-final-exact{margin-top:2.5mm !important;padding-bottom:2mm !important;}
+.hosting-checkline-exact{margin:3px 0 !important;}
+
+/* 6) فحص ومعالجة: Landscape حقيقي واستغلال العرض */
+@media print{
+  @page{margin:5mm;}
+  body.print-mode-active.print-form-medicalCheck,
+  body.print-popup-onepage.print-form-medicalCheck{
+    width:287mm !important;
+    height:200mm !important;
+    min-width:287mm !important;
+    max-width:287mm !important;
+    min-height:200mm !important;
+    max-height:200mm !important;
+    overflow:hidden !important;
+  }
+  body.print-mode-active.print-form-medicalCheck #formPage,
+  body.print-mode-active.print-form-medicalCheck #printArea,
+  body.print-popup-onepage.print-form-medicalCheck #formPage,
+  body.print-popup-onepage.print-form-medicalCheck #printArea{
+    width:287mm !important;
+    height:200mm !important;
+    max-height:200mm !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+  }
+  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-sheet,
+  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-sheet-v54,
+  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-sheet.medical-two-up-sheet-v54,
+  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-sheet,
+  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-sheet-v54,
+  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-sheet.medical-two-up-sheet-v54{
+    width:286mm !important;
+    min-width:286mm !important;
+    max-width:286mm !important;
+    height:198mm !important;
+    min-height:198mm !important;
+    max-height:198mm !important;
+    padding:3mm 3mm !important;
+    margin:0 auto !important;
+    overflow:hidden !important;
+  }
+  body.print-mode-active.print-form-medicalCheck #formPage .medical-two-up-grid,
+  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-two-up-grid{
+    grid-template-columns:1fr 1fr !important;
+    gap:6mm !important;
+    width:100% !important;
+    height:100% !important;
+  }
+  body.print-mode-active.print-form-medicalCheck #formPage .medical-form-copy,
+  body.print-mode-active.print-form-medicalCheck #formPage .medical-form-copy-v54,
+  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-form-copy,
+  body.print-popup-onepage.print-form-medicalCheck #formPage .medical-form-copy-v54{
+    width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    padding:6mm 5mm 5mm !important;
+    box-sizing:border-box !important;
+    overflow:hidden !important;
+  }
+}
+
+@media print{
+  .smart-top-info.one-row-top-info th,
+  .smart-top-info.one-row-top-info td{height:6.6mm !important;max-height:6.6mm !important;padding:0.9mm 1mm !important;}
+  .smart-top-info.one-row-top-info th{font-size:8.7px !important;}
+  .smart-top-info.one-row-top-info td{font-size:8.6px !important;}
+  .smart-top-info.one-row-top-info .top-name-cell .fit-student{font-size:8.1px !important;}
+  .smart-top-info.one-row-top-info .top-dept-cell .fit-department{font-size:7.1px !important;}
+  .smart-top-info.one-row-top-info .top-phone-cell .fit-phone{font-size:8.2px !important;}
+  .exact-clearance-grid .clear-box{min-height:60mm !important;}
+  .exact-clearance-grid .clear-spacer{min-height:32mm !important;}
+}
+
