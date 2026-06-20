@@ -8285,3 +8285,75 @@ body.dark .dashboard-pro-v8 .dashboard-developer-mini span, .dashboard-pro-v8.da
 /* GitHub Pages: request forms only */
 #uploadPage, #dashboardOpenBtn, .dashboard-entry-btn { display:none !important; }
 .hero-actions { justify-content:center; }
+
+/* v-final-2040-and-print: years extended in script.js and continuity print made deterministic */
+@media print{
+  .form-sheet,
+  .petition-sheet,
+  .paper{
+    break-inside: avoid;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .continuity-page-one{
+    break-after: page !important;
+    page-break-after: always !important;
+    min-height: 280mm !important;
+    height: 280mm !important;
+  }
+
+  .continuity-page-two{
+    break-before: page !important;
+    page-break-before: always !important;
+    min-height: 280mm !important;
+    height: 280mm !important;
+  }
+
+  .continuity-page-one .exact-continuity-info th,
+  .continuity-page-one .exact-continuity-info td{
+    font-size: 14px !important;
+    padding: 2.5mm 2mm !important;
+  }
+
+  .continuity-page-two .exact-continuity-grid{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 2.4mm !important;
+    margin-top: 0 !important;
+  }
+
+  .continuity-page-two .continuity-request-box{
+    min-height: 82mm !important;
+    padding: 5mm !important;
+  }
+
+  .continuity-page-two .continuity-purpose-box{
+    min-height: 80mm !important;
+    padding: 5mm !important;
+  }
+
+  .continuity-page-two .continuity-approval-pair-wrap{
+    min-height: 74mm !important;
+    padding: 2.5mm !important;
+  }
+
+  .continuity-page-two .continuity-official-approval-grid{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 2mm !important;
+    height: 100% !important;
+  }
+
+  .continuity-page-two .official-approval-box{
+    min-height: 68mm !important;
+  }
+
+  .continuity-page-two .continuity-box-text,
+  .continuity-page-two .official-approval-title,
+  .continuity-page-two .official-approval-footer{
+    font-size: 14px !important;
+    line-height: 1.75 !important;
+  }
+}

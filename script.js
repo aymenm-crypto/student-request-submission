@@ -275,7 +275,11 @@ function hostingFullStudyFillStretchValue(v, targetLen){ const s = addArabicKash
 function hostingFillValue(v){ const s = String(v == null ? '' : v).trim(); return s ? escapeHtml(s) : '&nbsp;'; }
 function reasonValues(data, keys){ return (keys || ['reason1','reason2','reason3']).map(k => displayValue(data[k] || '')); }
 function currentArabicDate(){ try { return new Date().toLocaleDateString('ar-IQ'); } catch(e){ return ''; } }
-function academicYearOptions(){ const now = new Date().getFullYear(); const arr=[]; for (let y = now-1; y <= now+4; y++) arr.push(`${y}-${y+1}`); return arr; }
+function academicYearOptions(){
+  const arr=[];
+  for (let y = 2025; y <= 2039; y++) arr.push(`${y}-${y+1}`);
+  return arr;
+}
 function buildDynamicFieldHtml(key,label,type){
   const t = type || 'text';
   if (t === 'year') {
@@ -577,7 +581,7 @@ function renderCommitteeBody(form, data, opts){
 
 function renderContinuityForm(form, data){
   const study = normalizeStudy(data.studyType);
-  return `<article class="paper official-paper form-sheet continuity-paper exact-clearance-sheet exact-continuity-sheet">
+  const headerBlock = `
     <div class="clearance-head exact-clearance-head exact-continuity-head">
       <div class="clearance-logo clearance-logo-college">${clearanceLogoHtml(runtimeClearanceCollegeLogoSrc,'clearance-college-logo')}</div>
       <div class="clearance-ministry exact-clearance-ministry exact-continuity-ministry">
@@ -587,8 +591,10 @@ function renderContinuityForm(form, data){
       </div>
       <div class="clearance-logo clearance-logo-university">${clearanceLogoHtml(runtimeClearanceUniversityLogoSrc,'clearance-university-logo')}</div>
     </div>
-    <div class="clearance-title exact-clearance-title exact-continuity-title">استمارة طلب تأييد استمرار بالدوام للعام ${displayYearRange(data.academicYear)}</div>
-    <table class="outline-table clearance-info exact-clearance-info exact-continuity-info">
+    <div class="clearance-title exact-clearance-title exact-continuity-title">استمارة طلب تأييد استمرار بالدوام للعام ${displayYearRange(data.academicYear)}</div>`;
+
+  const infoTable = `
+    <table class="outline-table clearance-info exact-clearance-info exact-continuity-info continuity-first-info">
       <tr>
         <th>اسم الطالب/ة</th><td>${displayValue(data.studentName)}</td>
         <th>الدراسة</th><td class="option-row">${squareMark(study==='الدراسة الصباحية')} الصباحية ${squareMark(study==='الدراسة المسائية')} المسائية</td>
@@ -601,8 +607,10 @@ function renderContinuityForm(form, data){
         <th>رقم الهاتف</th><td>${displayValue(data.phone)}</td>
         <th>توقيع الطالب</th><td class="continuity-signature-cell"></td>
       </tr>
-    </table>
-    <div class="clearance-grid exact-clearance-grid exact-continuity-grid rtl-two">
+    </table>`;
+
+  const secondPage = `
+    <div class="clearance-grid exact-clearance-grid exact-continuity-grid rtl-two continuity-second-grid">
       <div class="clear-box continuity-request-box compact-continuity-box">
         <div class="continuity-box-text continuity-inline-text">يرجى تفضلكم بالموافقة على منحي تأييد استمرارية بالدوام معنون إلى: <span class="continuity-inline-value">${displayValue(data.destination || form.directedTo)}</span></div>
       </div>
@@ -627,8 +635,14 @@ function renderContinuityForm(form, data){
           </div>
         </div>
       </div>
-    </div>
-    <div class="continuity-bottom-note">أي ملاحظات أخرى إن وجدت تكتب في ظهر الاستمارة</div>
+    </div>`;
+
+  return `<article class="paper official-paper form-sheet continuity-paper exact-clearance-sheet exact-continuity-sheet continuity-page-one">
+    ${headerBlock}
+    ${infoTable}
+  </article>
+  <article class="paper official-paper form-sheet continuity-paper exact-clearance-sheet exact-continuity-sheet continuity-page-two">
+    ${secondPage}
   </article>`;
 }
 
