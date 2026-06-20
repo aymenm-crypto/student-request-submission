@@ -5859,3 +5859,83 @@ function setupServerBindings(){
     }
   }, true);
 })();
+
+/* =========================================================
+   V80 TARGETED PATCH ONLY
+   - Clearance boxes are CSS-only.
+   - Mobile: use normal print with a mobile-print class (no PDF, no isolated blank page).
+   - Hosting: direct button/card opener without touching templates.
+   ========================================================= */
+(function(){
+  function isMobileV80(){
+    var ua = navigator.userAgent || '';
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || ((navigator.maxTouchPoints||0)>1 && /Macintosh/i.test(ua)) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches && window.innerWidth < 1200);
+  }
+  function getFormsV80(){
+    try { return (typeof forms !== 'undefined' && Array.isArray(forms)) ? forms : (Array.isArray(window.forms) ? window.forms : []); } catch(e) { return []; }
+  }
+  function findHostingV80(){
+    return getFormsV80().find(function(f){
+      var id = String(f.id || '').toLowerCase();
+      var t = String(f.title || '') + ' ' + String(f.desc || '') + ' ' + String(f.purpose || '');
+      return id === 'hosting' || t.indexOf('استضاف') > -1 || t.indexOf('الاستضافة') > -1;
+    });
+  }
+  function openHostingV80(){
+    var f = findHostingV80();
+    if (f && typeof openForm === 'function') { openForm(f); return true; }
+    return false;
+  }
+
+  window.openHostingV80 = openHostingV80;
+
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('button,.open-form-btn,.card,[data-id]') : null;
+    if (!el) return;
+    var id = el.getAttribute ? String(el.getAttribute('data-id') || '').toLowerCase() : '';
+    var txt = String(el.textContent || '');
+    if (id === 'hosting' || txt.indexOf('استضاف') > -1 || txt.indexOf('الاستضافة') > -1) {
+      if (openHostingV80()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }
+  }, true);
+
+  // ربط مباشر بعد رسم الكارتات حتى لو المستمع الأصلي فشل.
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(function(){
+      try {
+        document.querySelectorAll('.open-form-btn,[data-id="hosting"],button').forEach(function(btn){
+          var id = btn.getAttribute ? String(btn.getAttribute('data-id') || '').toLowerCase() : '';
+          var txt = String(btn.textContent || '');
+          if (id === 'hosting' || txt.indexOf('استضاف') > -1 || txt.indexOf('الاستضافة') > -1) {
+            btn.addEventListener('click', function(ev){
+              if (openHostingV80()) { ev.preventDefault(); ev.stopImmediatePropagation(); }
+            }, true);
+          }
+        });
+      } catch(e) {}
+    }, 500);
+  });
+
+  // الموبايل يرجع للطباعة العادية، مع كلاس ضغط صفحة فقط.
+  window.saveAndPrintCurrentRequest = saveAndPrintCurrentRequest = async function(){
+    var mobile = isMobileV80();
+    try {
+      var result = await saveActiveRequest({ mode:'print', force:true });
+      if (!result || result.ok !== true) throw new Error('تعذر تجهيز رقم الطلب.');
+      if (mobile) document.body.classList.add('mobile-print-v80');
+      try { printCurrentPreview(); }
+      finally {
+        if (mobile) setTimeout(function(){ document.body.classList.remove('mobile-print-v80'); }, 9000);
+      }
+    } catch(err) {
+      var st = document.getElementById('submitStatus');
+      if (st) st.textContent = (err && err.message) ? err.message : 'تعذر تجهيز الطباعة.';
+      if (mobile) document.body.classList.add('mobile-print-v80');
+      try { printCurrentPreview(); } catch(e) {}
+      if (mobile) setTimeout(function(){ document.body.classList.remove('mobile-print-v80'); }, 9000);
+    }
+  };
+})();

@@ -9059,3 +9059,125 @@ body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-free
   display:none!important;
   content:none!important;
 }
+
+/* =========================================================
+   V80 TARGETED PATCH ONLY - لا يلمس إلا:
+   1) براءة الذمة: تكبير مربعات الأقسام لاستغلال الفراغ.
+   2) موبايل: ضغط الطباعة على صفحة واحدة قدر الإمكان.
+   3) عودة/ترقين/عدم رسوب: حذف الخط الداخلي الزائد نهائياً.
+   ========================================================= */
+
+/* 1) براءة الذمة فقط: استغلال الفراغ السفلي بتكبير مربعات الأقسام */
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-grid,
+.exact-clearance-sheet .exact-clearance-grid{
+  gap:2.4mm 2.8mm !important;
+  margin-top:1.2mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-box,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-grid .clear-box,
+.exact-clearance-sheet .exact-clearance-grid .clear-box{
+  min-height:49mm !important;
+  height:49mm !important;
+  padding:4.4mm 5.2mm 4mm !important;
+  box-sizing:border-box !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-spacer,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-grid .clear-spacer,
+.exact-clearance-sheet .exact-clearance-grid .clear-spacer{
+  height:19mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .clearance-bottom-note,
+.print-form-clearance .exact-clearance-sheet .clearance-bottom-note,
+.exact-clearance-sheet .clearance-bottom-note{
+  margin-top:1.1mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .clearance-footer-strip,
+.print-form-clearance .exact-clearance-sheet .clearance-footer-strip,
+.exact-clearance-sheet .clearance-footer-strip{
+  margin-top:1.6mm !important;
+  min-height:7mm !important;
+}
+@media print{
+  body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-box{
+    min-height:49mm !important;
+    height:49mm !important;
+  }
+}
+
+/* 2) حذف الخط الداخلي الزائد في عودة المرقنة/ترقين القيد/عدم الرسوب فقط */
+body.print-mode-active.print-form-return #formPage .petition-v76 .official-free-sign-area,
+body.print-mode-active.print-form-dismissal #formPage .petition-v76 .official-free-sign-area,
+body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-free-sign-area,
+.print-form-return .petition-v76 .official-free-sign-area,
+.print-form-dismissal .petition-v76 .official-free-sign-area,
+.print-form-nonfail .petition-v76 .official-free-sign-area,
+.petition-v76 .official-free-sign-area{
+  border:0 !important;
+  border-top:0 !important;
+  border-bottom:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  background:none !important;
+  background-image:none !important;
+}
+body.print-mode-active.print-form-return #formPage .petition-v76 .official-free-sign-area::before,
+body.print-mode-active.print-form-return #formPage .petition-v76 .official-free-sign-area::after,
+body.print-mode-active.print-form-dismissal #formPage .petition-v76 .official-free-sign-area::before,
+body.print-mode-active.print-form-dismissal #formPage .petition-v76 .official-free-sign-area::after,
+body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-free-sign-area::before,
+body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-free-sign-area::after,
+.petition-v76 .official-free-sign-area::before,
+.petition-v76 .official-free-sign-area::after{
+  display:none !important;
+  content:none !important;
+  border:0 !important;
+  background:none !important;
+}
+body.print-mode-active.print-form-return #formPage .petition-v76 .official-approval-footer,
+body.print-mode-active.print-form-dismissal #formPage .petition-v76 .official-approval-footer,
+body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-approval-footer,
+.print-form-return .petition-v76 .official-approval-footer,
+.print-form-dismissal .petition-v76 .official-approval-footer,
+.print-form-nonfail .petition-v76 .official-approval-footer{
+  border:0 !important;
+  border-top:0 !important;
+  box-shadow:none !important;
+  background:#fff !important;
+}
+
+/* 3) موبايل فقط: ضغط صفحة الطباعة لتقليل الصفحة الثانية قدر الإمكان */
+@media print{
+  body.mobile-print-v80{
+    margin:0 !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    background:#fff !important;
+  }
+  body.mobile-print-v80 #formPage,
+  body.mobile-print-v80 #printArea{
+    margin:0 auto !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    background:#fff !important;
+    page-break-after:avoid !important;
+    break-after:avoid-page !important;
+  }
+  body.mobile-print-v80 #printArea > .form-sheet,
+  body.mobile-print-v80 #printArea > .paper,
+  body.mobile-print-v80 #printArea > .official-paper{
+    transform:scale(.965) !important;
+    -webkit-transform:scale(.965) !important;
+    transform-origin:top center !important;
+    -webkit-transform-origin:top center !important;
+    margin:0 auto !important;
+    box-shadow:none !important;
+    page-break-after:avoid !important;
+    break-after:avoid-page !important;
+  }
+  body.mobile-print-v80.print-form-medicalCheck #printArea > .form-sheet,
+  body.mobile-print-v80.print-form-medicalCheck #printArea > .paper{
+    transform:scale(.94) !important;
+    -webkit-transform:scale(.94) !important;
+  }
+}
