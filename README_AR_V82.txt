@@ -38,3 +38,9 @@
 
 تم تثبيت رابط Web App داخل config.js:
 https://script.google.com/macros/s/AKfycbzU9ejStmL-CZpmX6JOatraIRjJjeC2kv0o4N6lPcKA2SSWA_A3mNE5t1NQH0AUsA78/exec
+
+
+تحديث v94:
+- تم تثبيت مجلد الرفع في AppsScript_Code.gs: 1ePPs54VlqbCAmzt4dvST63bYqUx59as9
+- بعد رفع هذه النسخة على GitHub، يجب نسخ AppsScript_Code.gs إلى Apps Script ثم Deploy > Manage deployments > Edit > New version > Deploy.
+- رفع الطلبات الموقعة سيحفظ الملف في Drive ويضع الرابط داخل شيت REQUESTS وفي شيت UPLOADS.
