@@ -6688,3 +6688,53 @@ function setupServerBindings(){
   };
   try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
 })();
+
+/* V92 mobile print fix: disable PDF/html2canvas path because it breaks Arabic; use native HTML print with tighter A4 sizing. */
+(function(){
+  function isMobileLike(){
+    try {
+      var ua = navigator.userAgent || '';
+      return /iPhone|iPad|iPod|Android/i.test(ua) || (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+    } catch(e){ return false; }
+  }
+  function activeClass(){
+    try { return (typeof getActivePrintClass === 'function' ? getActivePrintClass() : '').trim(); } catch(e){ return ''; }
+  }
+  function landscape(){
+    try { return typeof isLandscapeForm === 'function' ? !!isLandscapeForm() : false; } catch(e){ return false; }
+  }
+  function mobilePrintHtml(printInner, formClass, isLand){
+    var cache = '92_' + Date.now();
+    var pageCss = isLand ?
+      '@page{size:A4 landscape;margin:0!important;}html,body{margin:0!important;padding:0!important;width:297mm!important;height:210mm!important;max-height:210mm!important;overflow:hidden!important;}#formPage,#printArea{width:297mm!important;height:210mm!important;max-height:210mm!important;overflow:hidden!important;}' :
+      '@page{size:A4 portrait;margin:0!important;}html,body{margin:0!important;padding:0!important;width:210mm!important;height:297mm!important;max-height:297mm!important;overflow:hidden!important;}#formPage,#printArea{width:210mm!important;height:297mm!important;max-height:297mm!important;overflow:hidden!important;}';
+    var compressCss = isLand ?
+      '#printArea>*{max-width:287mm!important;max-height:200mm!important;overflow:hidden!important;}' :
+      '#printArea>*{max-width:200mm!important;max-height:282mm!important;overflow:hidden!important;}';
+    var fixCss = '*{box-sizing:border-box!important;}body{direction:rtl!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}html,body,#formPage,#printArea{background:#fff!important;overflow:hidden!important;}.toolbar,.topbar,.home-panel,.service-actions,.print-actions,.preview-head,.section-head,.section-tools,.actions,.no-print{display:none!important;}#printArea>*{margin:0 auto!important;box-shadow:none!important;page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}'+compressCss+'@media print{'+pageCss+'}'+pageCss;
+    return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="styles.css?v='+cache+'"><style>'+fixCss+'</style></head><body class="print-mode-active mobile-print-v92 '+formClass+'"><div id="formPage"><div id="printArea">'+printInner+'</div></div><script>window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print();},650);});window.onafterprint=function(){setTimeout(function(){try{window.close();}catch(e){}},900);};<\/script></body></html>';
+  }
+  var desktopOrOldPrint = window.printCurrentPreview;
+  window.printCurrentPreview = function(){
+    if (!isMobileLike()) return desktopOrOldPrint ? desktopOrOldPrint() : undefined;
+    try {
+      if (typeof ensureFreshPreview === 'function') ensureFreshPreview();
+      var printArea = document.getElementById('printArea');
+      if (!printArea || !String(printArea.innerHTML || '').trim()) {
+        alert('لا توجد استمارة جاهزة للطباعة. املأ الاستمارة أولاً.');
+        return;
+      }
+      var w = window.open('', '_blank');
+      if (!w) {
+        alert('المتصفح منع نافذة الطباعة. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.');
+        return;
+      }
+      w.document.open();
+      w.document.write(mobilePrintHtml(printArea.innerHTML, activeClass(), landscape()));
+      w.document.close();
+    } catch(e){
+      alert((e && e.message) ? e.message : 'تعذر فتح الطباعة.');
+    }
+  };
+  try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+})();

@@ -9731,3 +9731,41 @@ body.print-mode-active.print-form-renomination #formPage .petition-thanks{
   margin:6mm auto 5mm !important;
   line-height:1.8 !important;
 }
+
+/* =========================================================
+   V92 mobile native print: no html2canvas/jsPDF, because PDF raster path breaks Arabic shaping.
+   This style is used only in the mobile print-only window.
+   ========================================================= */
+@media print{
+  body.mobile-print-v92{
+    margin:0!important;
+    padding:0!important;
+    background:#fff!important;
+    direction:rtl!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+    overflow:hidden!important;
+  }
+  body.mobile-print-v92 #formPage,
+  body.mobile-print-v92 #printArea{
+    margin:0 auto!important;
+    padding:0!important;
+    background:#fff!important;
+    overflow:hidden!important;
+    page-break-after:avoid!important;
+    break-after:avoid-page!important;
+  }
+  body.mobile-print-v92 #printArea > .form-sheet,
+  body.mobile-print-v92 #printArea > .paper,
+  body.mobile-print-v92 #printArea > .official-paper{
+    margin:0 auto!important;
+    box-shadow:none!important;
+    page-break-before:avoid!important;
+    page-break-after:avoid!important;
+    page-break-inside:avoid!important;
+    break-before:avoid-page!important;
+    break-after:avoid-page!important;
+    break-inside:avoid-page!important;
+    overflow:hidden!important;
+  }
+}
