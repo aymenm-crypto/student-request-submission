@@ -6264,3 +6264,172 @@ function setupServerBindings(){
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(showBindingState, 900); });
   else setTimeout(showBindingState, 900);
 })();
+
+/* =========================================================
+   V84 TARGETED REPAIR ONLY
+   - keeps Google Sheet delivery from V81/V83
+   - restores the old successful mobile/desktop print path: hidden iframe + window.print
+   - repairs hosting template/opening without touching other forms
+   ========================================================= */
+(function(){
+  'use strict';
+
+  function byId(id){ return document.getElementById(id); }
+  function safe(v){
+    try { if (typeof escapeHtml === 'function') return escapeHtml(v); } catch(e) {}
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); });
+  }
+  function display(v){
+    try { if (typeof displayValue === 'function') return displayValue(v); } catch(e) {}
+    var s = String(v == null ? '' : v).trim();
+    return s ? safe(s) : '&nbsp;';
+  }
+  function hostingFill(v){
+    try { if (typeof hostingFillValue === 'function') return hostingFillValue(v); } catch(e) {}
+    return display(v);
+  }
+  function paren(v){
+    var s = String(v == null ? '' : v).trim();
+    return s ? '(' + safe(s) + ')' : '(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)';
+  }
+  function normStudy(v){
+    var s = String(v == null ? '' : v).replace(/الدراسة/g,'').replace(/[()]/g,'').replace(/\s+/g,' ').trim();
+    if (/مسائ/.test(s)) return 'المسائية';
+    if (/صباح/.test(s)) return 'الصباحية';
+    return s || '';
+  }
+  function oppositeStudyLocal(v){
+    var s = normStudy(v);
+    return s === 'المسائية' ? 'الصباحية' : 'المسائية';
+  }
+  function studyAdj(v){
+    try { if (typeof studyAdjective === 'function') return studyAdjective(v); } catch(e) {}
+    var s = normStudy(v);
+    return s === 'المسائية' ? 'المسائية' : (s === 'الصباحية' ? 'الصباحية' : s);
+  }
+
+  // Expose missing names used by older appended hosting patches.
+  window.normalizeStudyWord = window.normalizeStudyWord || normStudy;
+  window.oppositeStudy = window.oppositeStudy || oppositeStudyLocal;
+
+  function getActivePrintClass(){
+    try { return (typeof activeForm !== 'undefined' && activeForm && activeForm.id) ? 'print-form-' + activeForm.id : ''; } catch(e) { return ''; }
+  }
+  function isLandscapeForm(){
+    try {
+      if (typeof activeForm !== 'undefined' && activeForm && activeForm.pageOrientation === 'landscape') return true;
+      if (typeof activeForm !== 'undefined' && activeForm && activeForm.id === 'medicalCheck') return true;
+    } catch(e) {}
+    return false;
+  }
+  function ensureFreshPreview(){
+    try { if (typeof syncPreview === 'function') syncPreview(); } catch(e) {}
+    try { if (typeof applyAutoFit === 'function') applyAutoFit(byId('printArea') || document); } catch(e) {}
+  }
+  function removeOldPrintFrames(){
+    document.querySelectorAll('iframe.__student_request_print_frame__,iframe.__student_print_v81__,iframe.__student_print_v84__').forEach(function(f){
+      try { f.remove(); } catch(e) {}
+    });
+  }
+  function buildPrintFrameHtml(printInner, formClass, landscape){
+    var cache = Date.now();
+    var pageCss = landscape ?
+      '@page{size:A4 landscape;margin:5mm!important;}html,body{margin:0!important;padding:0!important;background:#fff!important;width:287mm!important;min-width:287mm!important;max-width:287mm!important;height:200mm!important;min-height:200mm!important;max-height:200mm!important;overflow:hidden!important;}#formPage,#printArea{display:block!important;width:287mm!important;height:200mm!important;min-height:0!important;max-height:200mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;box-sizing:border-box!important;}' :
+      '@page{size:A4 portrait;margin:5mm!important;}html,body{margin:0!important;padding:0!important;background:#fff!important;width:200mm!important;min-width:200mm!important;max-width:200mm!important;height:287mm!important;min-height:287mm!important;max-height:287mm!important;overflow:hidden!important;}#formPage,#printArea{display:block!important;width:200mm!important;height:287mm!important;min-height:0!important;max-height:287mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;box-sizing:border-box!important;}';
+    var fixCss = '*{box-sizing:border-box!important;}body{direction:rtl!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}.toolbar,.topbar,.home-panel,.service-actions,.print-actions,.preview-head,.section-head,.section-tools,.actions,.no-print{display:none!important;}#printArea>*{page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}#printArea>.form-sheet,#printArea>.petition-sheet,#printArea>.exact-clearance-sheet,#printArea>.medical-two-up-sheet,#printArea>.medical-two-up-sheet-v53,#printArea>.medical-two-up-sheet-v54{margin:0 auto!important;transform:none!important;transform-origin:top center!important;box-shadow:none!important;}@media print{'+pageCss+'}'+pageCss;
+    return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="styles.css?v='+cache+'"><style>'+fixCss+'</style></head><body class="print-mode-active '+formClass+'"><div id="formPage"><div id="printArea">'+printInner+'</div></div><script>window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print();},550);});window.onafterprint=function(){setTimeout(function(){try{if(window.frameElement)window.frameElement.remove();}catch(e){}},700);};<\/script></body></html>';
+  }
+  function oldExactIframePrint(){
+    ensureFreshPreview();
+    var printArea = byId('printArea');
+    if (!printArea || !String(printArea.innerHTML || '').trim()) {
+      alert('لا توجد استمارة جاهزة للطباعة. املأ الاستمارة أولاً.');
+      return;
+    }
+    removeOldPrintFrames();
+    var frame = document.createElement('iframe');
+    frame.className = '__student_print_v84__';
+    frame.setAttribute('aria-hidden','true');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = '1px';
+    frame.style.height = '1px';
+    frame.style.border = '0';
+    frame.style.opacity = '0';
+    frame.style.pointerEvents = 'none';
+    document.body.appendChild(frame);
+    var doc = frame.contentWindow.document;
+    doc.open();
+    doc.write(buildPrintFrameHtml(printArea.innerHTML, getActivePrintClass(), isLandscapeForm()));
+    doc.close();
+    setTimeout(function(){ try { if (frame && frame.parentNode) frame.parentNode.removeChild(frame); } catch(e) {} }, 45000);
+  }
+
+  window.printCurrentPreview = function(){
+    try { oldExactIframePrint(); }
+    catch(e){ alert(e && e.message ? e.message : 'تعذر فتح الطباعة.'); }
+  };
+  try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+
+  // Save to the already configured Sheet first, then use the old print path on phones and computers.
+  window.saveAndPrintCurrentRequest = saveAndPrintCurrentRequest = async function(){
+    var st = byId('submitStatus');
+    try {
+      var result = await saveActiveRequest({ mode:'print', force:true });
+      if (!result || result.ok !== true) throw new Error('تعذر تأكيد الحفظ في الشيت.');
+      if (st) st.textContent = result.message || 'تم حفظ الطلب وجارٍ فتح الطباعة.';
+      window.printCurrentPreview();
+    } catch(err) {
+      if (st) st.textContent = (err && err.message) ? err.message : 'تعذر الحفظ أو الطباعة.';
+    }
+  };
+
+  // Replace the broken hosting renderer with a self-contained safe renderer.
+  window.renderHostingForm = renderHostingForm = function(form, data){
+    data = data || {};
+    var fromStudy = normStudy(data.fromStudy || data.studyType || 'الصباحية');
+    var toStudy = normStudy(data.toStudy || oppositeStudyLocal(fromStudy));
+    if (fromStudy && toStudy && fromStudy === toStudy) toStudy = oppositeStudyLocal(fromStudy);
+    var reasons = ['reason1','reason2','reason3'].map(function(k){ return hostingFill(data[k]); });
+    return '<article class="paper official-paper form-sheet hosting-sheet hosting-sheet-exact hosting-v84">' +
+      '<div class="hosting-top-exact"><div class="hosting-logos-exact"><div class="hosting-logo-exact hosting-logo-college-exact">' + clearanceLogoHtml(runtimeClearanceCollegeLogoSrc || clearanceCollegeLogoSrc,'hosting-college-logo') + '</div><div class="hosting-logo-exact hosting-logo-university-exact">' + clearanceLogoHtml(runtimeClearanceUniversityLogoSrc || clearanceUniversityLogoSrc,'hosting-university-logo') + '</div></div><div class="hosting-title-exact"><div>جامعة كربلاء- كلية الهندسة</div><div>شعبة الشؤون الطلابية والتسجيل</div><div class="hosting-title-main-exact">استمارة استضافة</div></div></div>' +
+      '<div class="hosting-rule-exact"></div>' +
+      '<div class="hosting-body-exact hosting-body-v84">' +
+        '<div class="hosting-line-exact hosting-line-transfer hosting-transfer-box"><span class="host-label">استضافة من</span> <span class="host-inline-fill short host-study-fill">' + safe(fromStudy) + '</span> <span class="host-label">إلى</span> <span class="host-inline-fill short host-study-fill">' + safe(toStudy) + '</span></div>' +
+        '<div class="hosting-line-exact hosting-line-student host-flow-line"><span class="host-label">إني الطالب/ة</span> <span class="host-inline-fill host-inline-fill-paren host-student-fill">' + paren(data.studentName) + '</span> <span class="host-label">أحد طلبة قسم</span> <span class="host-inline-fill host-inline-fill-paren host-inline-fill-department">' + paren(data.department) + '</span> <span class="host-label">المرحلة</span> <span class="host-inline-fill host-inline-fill-paren host-stage-fill">' + paren(data.stage) + '</span></div>' +
+        '<div class="hosting-line-exact hosting-line-request host-flow-line"><span class="host-label">الدراسة</span> <span class="host-inline-fill host-inline-fill-paren host-study-fill">' + paren(studyAdj(fromStudy)) + '</span> <span class="host-label">أروم الاستضافة إلى الدراسة</span> <span class="host-inline-fill host-inline-fill-paren host-study-fill">' + paren(studyAdj(toStudy)) + '</span></div>' +
+        '<div class="hosting-reasons-label-exact">وذلك للأسباب التالية:-</div><ol class="hosting-reasons-exact">' + reasons.map(function(v){ return '<li>' + v + '</li>'; }).join('') + '</ol>' +
+      '</div>' +
+      '<div class="hosting-student-sign-exact"><div>اسم الطالب وتوقيعه</div><div class="hosting-phone-exact">رقم الهاتف: ' + fitPhone(data.phone) + '</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div>' +
+      '<section class="hosting-review-section-exact"><div class="hosting-review-title-exact">رأي القسم العلمي</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">' + squareMark(false) + ' <span>أوافق على الطلب لوجود طاقة استيعابية.</span></div><div class="hosting-checkline-exact">' + squareMark(false) + ' <span>لا أوافق على الطلب لعدم وجود طاقة استيعابية.</span></div></div><div class="hosting-sign-col-exact"><div>رئيس القسم</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section>' +
+      '<section class="hosting-review-section-exact"><div class="hosting-review-title-exact">رأي السيد عميد الكلية المحترم</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">' + squareMark(false) + ' <span>لا مانع لدينا ونوصي السيد رئيس الجامعة المحترم بالموافقة على الاستضافة.</span></div><div class="hosting-checkline-exact">' + squareMark(false) + ' <span>لا أوافق على رفع الطلب لعدم توفر الشروط.</span></div></div><div class="hosting-sign-col-exact"><div>أ.د.حيدر ناظم عزيز المحنة</div><div>العميد</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section>' +
+      '<section class="hosting-review-section-exact hosting-review-final-exact"><div class="hosting-review-title-exact">رأي السيد رئيس الجامعة المحترم</div><div class="hosting-review-grid-exact"><div class="hosting-opinion-col-exact"><div class="hosting-checkline-exact">' + squareMark(false) + ' <span>أوافق على الاستضافة.</span></div><div class="hosting-checkline-exact">' + squareMark(false) + ' <span>لا أوافق على الاستضافة.</span></div></div><div class="hosting-sign-col-exact"><div>أ.د.صباح واجد علي</div><div>رئيس الجامعة</div><div class="hosting-date-exact">التاريخ &nbsp; / &nbsp; / &nbsp; 202</div></div></div></section>' +
+    '</article>';
+  };
+
+  function getForms(){ try { return (typeof forms !== 'undefined' && Array.isArray(forms)) ? forms : (Array.isArray(window.forms) ? window.forms : []); } catch(e) { return []; } }
+  function findHosting(){
+    return getForms().find(function(f){
+      var id = String(f.id || '').toLowerCase();
+      var t = String(f.title || '') + ' ' + String(f.desc || '') + ' ' + String(f.purpose || '');
+      return id === 'hosting' || /استضاف|الاستضافة/.test(t);
+    });
+  }
+  window.openHostingForm = window.openHostingV84 = function(){
+    var f = findHosting();
+    if (f && typeof openForm === 'function') {
+      try { openForm(f); return true; } catch(e) { try { console.error(e); } catch(_) {} }
+    }
+    return false;
+  };
+  document.addEventListener('click', function(ev){
+    var el = ev.target && ev.target.closest ? ev.target.closest('.open-form-btn,[data-id],button,.card') : null;
+    if (!el) return;
+    var id = el.getAttribute ? String(el.getAttribute('data-id') || '').toLowerCase() : '';
+    var txt = String(el.textContent || '');
+    if (id === 'hosting' || /استضاف|الاستضافة/.test(txt)) {
+      if (window.openHostingV84()) { ev.preventDefault(); ev.stopImmediatePropagation(); }
+    }
+  }, true);
+})();
