@@ -5939,3 +5939,328 @@ function setupServerBindings(){
     }
   };
 })();
+
+/* =========================================================
+   V81 ROOT FIX - sheet delivery + reliable hosting + mobile one-page output
+   - لا يعطي حفظ وهمي: يجب وضع رابط Web App في config.js
+   - الموبايل يولد PDF صفحة واحدة بدون رابط المتصفح
+   - الكمبيوتر يطبع من إطار مخفي بنفس قالب المعاينة
+   ========================================================= */
+(function(){
+  'use strict';
+  var V81_SOURCE = 'student-request-v81';
+  var pendingIframeCalls = Object.create(null);
+
+  function byId(id){ return document.getElementById(id); }
+  function isMobile(){
+    var ua = navigator.userAgent || '';
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || ((navigator.maxTouchPoints || 0) > 1 && /Macintosh/i.test(ua)) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches && window.innerWidth < 1200);
+  }
+  function activeFormClass(){
+    try { return (activeForm && activeForm.id) ? 'print-form-' + activeForm.id : ''; } catch(e) { return ''; }
+  }
+  function isLandscape(){
+    try { return !!(activeForm && (activeForm.pageOrientation === 'landscape' || activeForm.id === 'medicalCheck')); } catch(e) { return false; }
+  }
+  function cleanUrl(u){ return String(u || '').trim().replace(/\s+/g,''); }
+  function getGatewayUrl(){
+    var meta = document.querySelector('meta[name="student-web-app-url"]');
+    var url = cleanUrl(window.STUDENT_REQUEST_WEB_APP_URL || (meta && meta.content) || '');
+    try { if (!url) url = cleanUrl(localStorage.getItem('STUDENT_REQUEST_WEB_APP_URL') || ''); } catch(e) {}
+    try {
+      var qp = new URLSearchParams(location.search || '');
+      var q = qp.get('webAppUrl') || qp.get('appsScriptUrl') || '';
+      if (q) url = cleanUrl(q);
+    } catch(e) {}
+    return url;
+  }
+  function configured(){ return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(getGatewayUrl()); }
+  function makeRequestId(){ return 'V81-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
+  function normalizeResult(result){
+    if (typeof result === 'string') {
+      try { result = JSON.parse(result); } catch(e) { result = { ok:false, message:result }; }
+    }
+    return result || { ok:false, message:'الخادم لم يرجع نتيجة.' };
+  }
+
+  window.addEventListener('message', function(ev){
+    var data = ev && ev.data;
+    if (!data || data.source !== V81_SOURCE || !data.requestId) return;
+    var item = pendingIframeCalls[data.requestId];
+    if (!item) return;
+    delete pendingIframeCalls[data.requestId];
+    clearTimeout(item.timer);
+    try { if (item.frame && item.frame.parentNode) item.frame.parentNode.removeChild(item.frame); } catch(e) {}
+    var result = normalizeResult(data.result);
+    if (result && result.ok === true) item.resolve(result);
+    else item.reject(new Error((result && result.message) || 'لم يتم تأكيد الحفظ في الشيت.'));
+  });
+
+  function postByIframe(url, method, payload){
+    return new Promise(function(resolve, reject){
+      var requestId = makeRequestId();
+      var frame = document.createElement('iframe');
+      frame.name = 'student_request_post_' + requestId.replace(/[^a-zA-Z0-9_]/g,'_');
+      frame.style.cssText = 'position:absolute;left:-10000px;top:-10000px;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
+      document.body.appendChild(frame);
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      form.target = frame.name;
+      form.style.display = 'none';
+      function field(name, value){
+        var input = document.createElement('textarea');
+        input.name = name;
+        input.value = value == null ? '' : String(value);
+        form.appendChild(input);
+      }
+      field('method', method);
+      field('requestId', requestId);
+      field('responseMode', 'postMessage');
+      field('source', V81_SOURCE);
+      field('payload', JSON.stringify(payload || {}));
+      field('json', JSON.stringify({ method:method, payload:payload || {}, requestId:requestId, source:V81_SOURCE }));
+      document.body.appendChild(form);
+      pendingIframeCalls[requestId] = {
+        frame: frame,
+        resolve: resolve,
+        reject: reject,
+        timer: setTimeout(function(){
+          if (!pendingIframeCalls[requestId]) return;
+          delete pendingIframeCalls[requestId];
+          try { form.remove(); } catch(e) {}
+          try { if (frame && frame.parentNode) frame.parentNode.removeChild(frame); } catch(e) {}
+          reject(new Error('انتهت مهلة الاتصال بالشيت. تأكد من نشر Google Apps Script كـ Web App ومن وضع الرابط الصحيح في config.js.'));
+        }, 65000)
+      };
+      try { form.submit(); }
+      catch(err){
+        delete pendingIframeCalls[requestId];
+        clearTimeout(pendingIframeCalls[requestId] && pendingIframeCalls[requestId].timer);
+        try { form.remove(); } catch(e) {}
+        try { if (frame && frame.parentNode) frame.parentNode.removeChild(frame); } catch(e) {}
+        reject(err);
+      }
+      setTimeout(function(){ try { form.remove(); } catch(e) {} }, 1500);
+    });
+  }
+
+  function postByFetch(url, method, payload){
+    return fetch(url, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify({ method:method, payload:payload || {}, responseMode:'json', source:V81_SOURCE }),
+      redirect:'follow',
+      credentials:'omit'
+    }).then(function(res){
+      return res.text().then(function(text){
+        var result;
+        try { result = JSON.parse(text); }
+        catch(e) {
+          var m = text.match(/<script[^>]*id=["']student-request-result["'][^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/i);
+          if (m) result = JSON.parse(m[1]);
+          else throw new Error('وصل رد غير JSON من الخادم. أعد نشر ملف Apps Script المرفق.');
+        }
+        result = normalizeResult(result);
+        if (result && result.ok === true) return result;
+        throw new Error((result && result.message) || 'رفض الخادم العملية.');
+      });
+    });
+  }
+
+  async function callAppsScript(method, payload){
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      return new Promise(function(resolve, reject){
+        var done = false;
+        var timer = setTimeout(function(){ if (!done) { done = true; reject(new Error('انتهت مهلة الاتصال بالخادم.')); } }, 65000);
+        function ok(r){ if (done) return; done = true; clearTimeout(timer); r = normalizeResult(r); r.ok === true ? resolve(r) : reject(new Error(r.message || 'لم يتم الحفظ.')); }
+        function fail(err){ if (done) return; done = true; clearTimeout(timer); reject(new Error(err && err.message ? err.message : 'حدث خطأ في الخادم.')); }
+        try {
+          if (typeof google.script.run.appServer === 'function') google.script.run.withSuccessHandler(ok).withFailureHandler(fail).appServer({ method:method, payload:payload || {} });
+          else google.script.run.withSuccessHandler(ok).withFailureHandler(fail)[method](payload || {});
+        } catch(e) { fail(e); }
+      });
+    }
+    var url = getGatewayUrl();
+    if (!url) throw new Error('الحفظ غير مربوط: افتح ملف config.js وضع رابط Google Apps Script Web App المنشور بصيغة /exec.');
+    if (!configured()) throw new Error('رابط Web App في config.js غير صحيح. يجب أن يبدأ بـ https://script.google.com/macros/s/ وينتهي بـ /exec');
+    try { return await postByFetch(url, method, payload); }
+    catch(fetchErr){ return await postByIframe(url, method, payload); }
+  }
+
+  window.runServer = function(method, payload){ return callAppsScript(method, payload); };
+  try { runServer = window.runServer; } catch(e) {}
+
+  function onePageCss(landscape){
+    if (landscape) {
+      return '@page{size:A4 landscape;margin:5mm!important;}html,body{margin:0!important;padding:0!important;background:#fff!important;width:287mm!important;height:200mm!important;overflow:hidden!important;}#formPage,#printArea{display:block!important;width:287mm!important;height:200mm!important;min-height:0!important;max-height:200mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;}';
+    }
+    return '@page{size:A4 portrait;margin:5mm!important;}html,body{margin:0!important;padding:0!important;background:#fff!important;width:200mm!important;height:287mm!important;overflow:hidden!important;}#formPage,#printArea{display:block!important;width:200mm!important;height:287mm!important;min-height:0!important;max-height:287mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;}';
+  }
+  function sharedPrintFixCss(landscape){
+    return onePageCss(landscape) + '*{box-sizing:border-box!important;}body{direction:rtl!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;font-family:Cairo,Arial,sans-serif!important;}.toolbar,.topbar,.home-panel,.service-actions,.print-actions,.preview-head,.section-head,.section-tools,.actions,.no-print{display:none!important;}#printArea>*{page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}#printArea>.form-sheet,#printArea>.petition-sheet,#printArea>.exact-clearance-sheet,#printArea>.medical-two-up-sheet,#printArea>.medical-two-up-sheet-v53,#printArea>.medical-two-up-sheet-v54{margin:0 auto!important;box-shadow:none!important;page-break-after:avoid!important;break-after:avoid-page!important;}@media print{'+onePageCss(landscape)+'}';
+  }
+  function ensurePreview(){
+    try { if (typeof syncPreview === 'function') syncPreview(); } catch(e) {}
+    try { if (typeof applyAutoFit === 'function') applyAutoFit(byId('printArea') || document); } catch(e) {}
+  }
+  function stylesHref(){
+    try { return new URL('styles.css?v=81', location.href).href; } catch(e) { return 'styles.css?v=81'; }
+  }
+  function buildPrintHtml(inner, cls, landscape){
+    return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>طباعة الاستمارة</title><link rel="stylesheet" href="'+stylesHref()+'"><style>'+sharedPrintFixCss(landscape)+'</style></head><body class="print-mode-active '+cls+'"><section id="formPage"><div id="printArea">'+inner+'</div></section><script>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},550);});window.onafterprint=function(){setTimeout(function(){try{if(window.frameElement)window.frameElement.remove();}catch(e){}},800);};<\/script></body></html>';
+  }
+  function desktopPrint(){
+    ensurePreview();
+    var printArea = byId('printArea');
+    if (!printArea || !String(printArea.innerHTML || '').trim()) throw new Error('لا توجد استمارة جاهزة للطباعة.');
+    document.querySelectorAll('iframe.__student_print_v81__').forEach(function(f){ try { f.remove(); } catch(e) {} });
+    var frame = document.createElement('iframe');
+    frame.className = '__student_print_v81__';
+    frame.setAttribute('aria-hidden','true');
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(frame);
+    var doc = frame.contentWindow.document;
+    doc.open();
+    doc.write(buildPrintHtml(printArea.innerHTML, activeFormClass(), isLandscape()));
+    doc.close();
+    setTimeout(function(){ try { if (frame && frame.parentNode) frame.parentNode.removeChild(frame); } catch(e) {} }, 45000);
+  }
+  window.printCurrentPreview = function(){
+    try { desktopPrint(); }
+    catch(e){ alert(e && e.message ? e.message : 'تعذر تجهيز الطباعة.'); }
+  };
+  try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+
+  function loadHtml2Pdf(){
+    return new Promise(function(resolve, reject){
+      if (window.html2pdf) return resolve();
+      var old = document.querySelector('script[data-v81-html2pdf="1"]');
+      if (old) { old.addEventListener('load', resolve); old.addEventListener('error', function(){ reject(new Error('تعذر تحميل مكتبة PDF.')); }); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.async = true;
+      s.dataset.v81Html2pdf = '1';
+      s.onload = resolve;
+      s.onerror = function(){ reject(new Error('تعذر تحميل مكتبة PDF للموبايل. افتح الإنترنت أو استخدم الطباعة من الحاسبة.')); };
+      document.head.appendChild(s);
+    });
+  }
+  function fileName(){
+    var no = '';
+    try { no = lastSavedRequestNo || ''; } catch(e) {}
+    try { var rn = byId('requestNumber'); if (rn && rn.textContent.trim() && rn.textContent.indexOf('يُنشأ') === -1) no = rn.textContent.trim(); } catch(e) {}
+    if (!no) no = 'student-request';
+    return String(no).replace(/[\\/:*?"<>|\s]+/g,'_') + '.pdf';
+  }
+  async function mobilePdf(preWin){
+    ensurePreview();
+    await loadHtml2Pdf();
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e) {}
+    var printArea = byId('printArea');
+    if (!printArea || !String(printArea.innerHTML || '').trim()) throw new Error('لا توجد استمارة جاهزة.');
+    var landscape = isLandscape();
+    var holder = document.createElement('div');
+    holder.className = 'mobile-pdf-onepage-v81 print-mode-active ' + activeFormClass();
+    holder.setAttribute('dir','rtl');
+    holder.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;z-index:-1;overflow:hidden;width:'+(landscape?'297mm':'210mm')+';height:'+(landscape?'210mm':'297mm')+';';
+    holder.innerHTML = '<style>'+sharedPrintFixCss(landscape)+'</style><section id="formPage"><div id="printArea">'+printArea.innerHTML+'</div></section>';
+    document.body.appendChild(holder);
+    try {
+      var opt = {
+        margin: 0,
+        filename: fileName(),
+        image: { type:'jpeg', quality:0.98 },
+        html2canvas: { scale:2, useCORS:true, allowTaint:true, backgroundColor:'#ffffff', logging:false, windowWidth: landscape ? 1123 : 794 },
+        jsPDF: { unit:'mm', format:'a4', orientation: landscape ? 'landscape' : 'portrait', compress:true },
+        pagebreak: { mode:['avoid-all','css','legacy'], avoid:['#printArea','.form-sheet','.paper','.official-paper'] }
+      };
+      var worker = window.html2pdf().set(opt).from(holder);
+      var blob = await worker.outputPdf('blob');
+      var url = URL.createObjectURL(blob);
+      if (preWin && !preWin.closed) {
+        preWin.location.href = url;
+        setTimeout(function(){ try { preWin.focus(); } catch(e) {} }, 300);
+      } else {
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fileName();
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){ try { a.remove(); } catch(e) {} }, 500);
+      }
+      setTimeout(function(){ try { URL.revokeObjectURL(url); } catch(e) {} }, 120000);
+      var st = byId('submitStatus');
+      if (st) st.textContent = 'تم تجهيز ملف PDF صفحة واحدة للموبايل بدون رابط المتصفح. افتحه ثم اطبع.';
+    } finally {
+      try { holder.remove(); } catch(e) {}
+    }
+  }
+
+  window.saveAndPrintCurrentRequest = saveAndPrintCurrentRequest = async function(){
+    var mobile = isMobile();
+    var st = byId('submitStatus');
+    var preWin = null;
+    if (mobile) { try { preWin = window.open('', '_blank'); if (preWin) preWin.document.write('<!doctype html><title>جاري تجهيز PDF</title><body dir="rtl" style="font-family:Arial;padding:22px">جاري تجهيز ملف الطباعة...</body>'); } catch(e) { preWin = null; } }
+    try {
+      var result = await saveActiveRequest({ mode:'print', force:true });
+      if (!result || result.ok !== true) throw new Error('تعذر تأكيد الحفظ في الشيت.');
+      if (mobile) await mobilePdf(preWin); else printCurrentPreview();
+    } catch(err) {
+      try { if (preWin && !preWin.closed) preWin.close(); } catch(e) {}
+      if (st) st.textContent = (err && err.message ? err.message : 'تعذر الحفظ أو الطباعة.') + ' — لم يتم تأكيد إرسال الرد إلى الشيت.';
+    }
+  };
+
+  function getForms(){ try { return (typeof forms !== 'undefined' && Array.isArray(forms)) ? forms : (Array.isArray(window.forms) ? window.forms : []); } catch(e) { return []; } }
+  function findHosting(){
+    return getForms().find(function(f){
+      var id = String(f.id || '').toLowerCase();
+      var t = String(f.title || '') + ' ' + String(f.desc || '') + ' ' + String(f.purpose || '');
+      return id === 'hosting' || /استضاف|الاستضافة/.test(t);
+    });
+  }
+  function openHosting(){
+    var f = findHosting();
+    if (f && typeof openForm === 'function') {
+      try { openForm(f); return true; } catch(e) { console.error(e); }
+    }
+    return false;
+  }
+  window.openHostingForm = openHosting;
+  function bindHostingButtons(root){
+    (root || document).querySelectorAll('.open-form-btn,[data-id="hosting"],button,.card').forEach(function(el){
+      if (el.__hostingV81Bound) return;
+      var id = el.getAttribute ? String(el.getAttribute('data-id') || '').toLowerCase() : '';
+      var txt = String(el.textContent || '');
+      if (id === 'hosting' || /استضاف|الاستضافة/.test(txt)) {
+        el.__hostingV81Bound = true;
+        el.addEventListener('click', function(ev){
+          if (openHosting()) { ev.preventDefault(); ev.stopImmediatePropagation(); }
+        }, true);
+      }
+    });
+  }
+  document.addEventListener('click', function(ev){
+    var el = ev.target && ev.target.closest ? ev.target.closest('.open-form-btn,[data-id],button,.card') : null;
+    if (!el) return;
+    var id = el.getAttribute ? String(el.getAttribute('data-id') || '').toLowerCase() : '';
+    var txt = String(el.textContent || '');
+    if (id === 'hosting' || /استضاف|الاستضافة/.test(txt)) {
+      if (openHosting()) { ev.preventDefault(); ev.stopImmediatePropagation(); }
+    }
+  }, true);
+  if (window.MutationObserver) {
+    new MutationObserver(function(list){ list.forEach(function(m){ m.addedNodes && Array.prototype.forEach.call(m.addedNodes, function(n){ if (n && n.nodeType === 1) bindHostingButtons(n); }); }); }).observe(document.documentElement, { childList:true, subtree:true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ bindHostingButtons(document); }, 0); });
+  else setTimeout(function(){ bindHostingButtons(document); }, 0);
+
+  function showBindingState(){
+    var st = byId('submitStatus');
+    if (!st) return;
+    if (!getGatewayUrl()) st.textContent = 'تنبيه: الحفظ في الشيت يحتاج وضع رابط Web App داخل config.js. الطباعة لن تبدأ إلا بعد تأكيد الحفظ.';
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(showBindingState, 900); });
+  else setTimeout(showBindingState, 900);
+})();
