@@ -5631,3 +5631,95 @@ function setupServerBindings(){
     }
   }, true);
 })();
+
+/* =========================================================
+   V77 TARGETED ONLY PATCH
+   - Do not touch templates except print output method.
+   - Desktop: normal print.
+   - Mobile: direct PDF via visible html2canvas/jsPDF capture (prevents blank PDF).
+   ========================================================= */
+(function(){
+  function isMobileV77(){
+    var ua = navigator.userAgent || '';
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || ((navigator.maxTouchPoints||0)>1 && /Macintosh/i.test(ua)) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches && window.innerWidth < 1200);
+  }
+  function loadScriptV77(src, testFn){
+    return new Promise(function(resolve,reject){
+      try { if (testFn && testFn()) return resolve(); } catch(e) {}
+      var old = document.querySelector('script[src="'+src+'"]');
+      if (old) { old.addEventListener('load', resolve); old.addEventListener('error', reject); return; }
+      var s=document.createElement('script');
+      s.src=src; s.async=true;
+      s.onload=resolve;
+      s.onerror=function(){ reject(new Error('تعذر تحميل مكتبة PDF. افتح الرابط بالمتصفح ثم أعد المحاولة.')); };
+      document.head.appendChild(s);
+    });
+  }
+  function formClassV77(){ return (typeof activeForm !== 'undefined' && activeForm && activeForm.id) ? 'print-form-' + activeForm.id : ''; }
+  function isLandscapeV77(){ return !!(typeof activeForm !== 'undefined' && activeForm && activeForm.pageOrientation === 'landscape'); }
+  function fileNameV77(){
+    var no = 'student-request';
+    try { if (typeof lastSavedRequestNo !== 'undefined' && lastSavedRequestNo) no = lastSavedRequestNo; } catch(e) {}
+    try { var rn=document.getElementById('requestNumber'); if (rn && rn.textContent.trim()) no = rn.textContent.trim(); } catch(e) {}
+    return String(no).replace(/[\\/:*?"<>|\s]+/g,'_') + '.pdf';
+  }
+  async function downloadMobilePdfV77(){
+    if (typeof syncPreview === 'function') syncPreview();
+    var src = document.getElementById('printArea');
+    if (!src || !src.innerHTML.trim()) throw new Error('لا توجد استمارة جاهزة للتنزيل.');
+    if (typeof applyAutoFit === 'function') applyAutoFit(src);
+
+    await loadScriptV77('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function(){ return !!window.html2canvas; });
+    await loadScriptV77('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function(){ return !!(window.jspdf && window.jspdf.jsPDF); });
+
+    var holder = document.createElement('div');
+    holder.className = 'mobile-pdf-capture-v77 print-mode-active ' + formClassV77();
+    var landscape = isLandscapeV77();
+    var pageW = landscape ? 297 : 210;
+    var pageH = landscape ? 210 : 297;
+    holder.style.width = pageW + 'mm';
+    holder.style.height = pageH + 'mm';
+    holder.innerHTML = '<div id="formPage"><div id="printArea">' + src.innerHTML + '</div></div>';
+
+    var fc = formClassV77();
+    document.body.classList.add('print-mode-active');
+    if (fc) document.body.classList.add(fc);
+    document.body.appendChild(holder);
+
+    try {
+      await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
+      var canvas = await window.html2canvas(holder, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: holder.scrollWidth,
+        windowHeight: holder.scrollHeight
+      });
+      var img = canvas.toDataURL('image/jpeg', 0.98);
+      var pdf = new window.jspdf.jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4', compress: true });
+      pdf.addImage(img, 'JPEG', 0, 0, pageW, pageH, undefined, 'FAST');
+      pdf.save(fileNameV77());
+    } finally {
+      try { holder.remove(); } catch(e) {}
+      document.body.classList.remove('print-mode-active');
+      if (fc) document.body.classList.remove(fc);
+    }
+  }
+
+  window.saveAndPrintCurrentRequest = saveAndPrintCurrentRequest = async function(){
+    try {
+      var result = await saveActiveRequest({mode:'print', force:true});
+      if (!result || result.ok !== true) throw new Error('تعذر تجهيز رقم الطلب.');
+      if (isMobileV77()) await downloadMobilePdfV77();
+      else printCurrentPreview();
+    } catch(err) {
+      var st = document.getElementById('submitStatus');
+      if (st) st.textContent = err.message || 'تعذر تجهيز الطباعة.';
+      if (!isMobileV77()) { try { printCurrentPreview(); } catch(e) {} }
+    }
+  };
+})();

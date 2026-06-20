@@ -8850,3 +8850,85 @@ body.print-popup-onepage #printArea>*{margin:0 auto!important;page-break-before:
 body.pdf-render-mode{background:#fff!important;}
 .pdf-export-holder{position:fixed;left:-10000px;top:0;background:#fff;z-index:-1;}
 .pdf-export-holder .form-sheet{box-shadow:none!important;margin:0!important;}
+
+/* =========================================================
+   V77 TARGETED ONLY PATCH
+   1) Continuity stages: slightly larger/readable, no clipping
+   2) Petition signatures (return/dismissal/nonfail): move signer/date block to side
+   3) PDF mobile helper holder: render inside viewport for mobile PDF capture
+   ========================================================= */
+
+/* 1. فقط استمارة تأييد الاستمرارية: تكبير خيارات المرحلة شوي بدون تغيير باقي القوالب */
+.continuity-stage-cell .stage-print-option{
+  font-size:7.45pt!important;
+  line-height:1!important;
+  gap:.42mm!important;
+  margin:0 .24mm!important;
+  align-items:center!important;
+  white-space:nowrap!important;
+  font-weight:800!important;
+}
+.continuity-stage-cell .stage-print-option span:last-child{
+  display:inline-block!important;
+  white-space:nowrap!important;
+}
+.continuity-stage-cell .square-mark,
+.continuity-stage-cell .stage-print-option .square-mark{
+  width:8.4px!important;
+  height:8.4px!important;
+  min-width:8.4px!important;
+  font-size:6.3px!important;
+  border-width:.95px!important;
+  margin:0!important;
+}
+@media print{
+  .continuity-stage-cell .stage-print-option{font-size:7.25pt!important;gap:.36mm!important;margin:0 .20mm!important;}
+  .continuity-stage-cell .square-mark,
+  .continuity-stage-cell .stage-print-option .square-mark{width:8.1px!important;height:8.1px!important;min-width:8.1px!important;font-size:6px!important;}
+}
+
+/* 2. فقط عودة المرقنة / ترقين القيد / عدم الرسوب: اسم وتاريخ رئيس القسم ومدير التسجيل للطرف */
+.petition-v76 .official-approval-footer{
+  right:auto!important;
+  left:6mm!important;
+  width:43mm!important;
+  text-align:center!important;
+  bottom:3mm!important;
+  border-top:0!important;
+  padding-top:0!important;
+  background:#fff!important;
+}
+.petition-v76 .official-free-sign-area{
+  margin-left:46mm!important;
+  margin-right:0!important;
+  height:18mm!important;
+  border-bottom:1px solid #333!important;
+}
+@media print{
+  .petition-v76 .official-approval-footer{right:auto!important;left:6mm!important;width:43mm!important;}
+  .petition-v76 .official-free-sign-area{margin-left:46mm!important;margin-right:0!important;}
+}
+
+/* 3. حامل PDF للموبايل: يبقى داخل الشاشة أثناء الالتقاط حتى لا يطلع PDF أبيض */
+.mobile-pdf-capture-v77{
+  position:fixed!important;
+  left:0!important;
+  top:0!important;
+  background:#fff!important;
+  z-index:2147483647!important;
+  opacity:1!important;
+  pointer-events:none!important;
+  overflow:hidden!important;
+  box-shadow:none!important;
+}
+.mobile-pdf-capture-v77 #formPage,
+.mobile-pdf-capture-v77 #printArea{
+  margin:0!important;
+  padding:0!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.mobile-pdf-capture-v77 .form-sheet{
+  margin:0!important;
+  box-shadow:none!important;
+}
