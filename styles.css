@@ -9769,3 +9769,17 @@ body.print-mode-active.print-form-renomination #formPage .petition-thanks{
     overflow:hidden!important;
   }
 }
+
+/* =========================================================
+   V93 transfer & renomination only
+   Lower student info block to create signing space above it, using mid-page blank area.
+   ========================================================= */
+body.print-mode-active.print-form-transferRequest #formPage .petition-v87 .petition-student-signline-v76,
+body.print-mode-active.print-form-renomination #formPage .petition-v87 .petition-student-signline-v76,
+.print-form-transferRequest .petition-v87 .petition-student-signline-v76,
+.print-form-renomination .petition-v87 .petition-student-signline-v76,
+.petition-v87 .petition-student-signline-v76{
+  position:relative !important;
+  top:18mm !important;
+  margin-bottom:18mm !important;
+}
