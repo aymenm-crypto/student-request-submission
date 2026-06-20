@@ -9593,3 +9593,50 @@ body.print-mode-active.print-form-hosting #formPage .hosting-review-grid-exact,
     line-height:1.4 !important;
   }
 }
+
+/* V87: طلب نقل وإعادة ترشيح - نفس القالب مع تنسيق الجملة الطويلة */
+.petition-v87 .petition-body-v87{
+  line-height:2.05 !important;
+  font-size:16px !important;
+  text-align:right !important;
+}
+.petition-v87 .petition-body-v87 p{
+  margin:7mm 0 0 !important;
+}
+.petition-v87 .petition-thanks{
+  margin-top:8mm !important;
+  text-align:right !important;
+}
+@media print{
+  body.print-mode-active.print-form-transferRequest #formPage .petition-v87 .petition-body-v87,
+  body.print-mode-active.print-form-renomination #formPage .petition-v87 .petition-body-v87{
+    line-height:1.95 !important;
+    font-size:14.8px !important;
+  }
+}
+
+/* =========================================================
+   V88 hosting signatures only
+   Move name/title closer to date while keeping blank signing area above.
+   ========================================================= */
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact,
+.print-form-hosting .hosting-sign-col-exact,
+.hosting-sheet-exact .hosting-sign-col-exact{
+  justify-content:flex-end !important;
+  min-height:34mm !important;
+  padding-top:10mm !important; /* reserve upper blank area for signature */
+  padding-bottom:0 !important;
+  gap:.8mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact > div,
+.print-form-hosting .hosting-sign-col-exact > div,
+.hosting-sheet-exact .hosting-sign-col-exact > div{
+  margin:0 !important;
+  line-height:1.45 !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact .hosting-date-exact,
+.print-form-hosting .hosting-sign-col-exact .hosting-date-exact,
+.hosting-sheet-exact .hosting-sign-col-exact .hosting-date-exact{
+  margin-top:.6mm !important;
+  padding-top:0 !important;
+}

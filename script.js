@@ -6485,3 +6485,115 @@ function setupServerBindings(){
   };
   try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
 })();
+
+/* =========================================================
+   V87 NEW PETITION FORMS
+   - إضافة طلب نقل وإعادة ترشيح على نفس قالب: ترقين/عودة/عدم رسوب
+   - نفس بيانات الطالب + نفس هامش رئيس القسم ومدير التسجيل
+   ========================================================= */
+(function(){
+  function safe(v){ return (typeof escapeHtml === 'function') ? escapeHtml(v) : String(v == null ? '' : v); }
+  function val(v){ return (typeof displayValue === 'function') ? displayValue(v) : safe(v || ''); }
+  function addFormOnce(form){
+    try {
+      if (typeof forms === 'undefined' || !Array.isArray(forms)) return;
+      if (forms.some(function(f){ return f && f.id === form.id; })) return;
+      var idx = forms.findIndex(function(f){ return f && f.id === 'nonfail'; });
+      if (idx >= 0) forms.splice(idx + 1, 0, form);
+      else forms.push(form);
+    } catch(e) {}
+  }
+
+  addFormOnce({
+    id:'transferRequest', icon:'🔀', code:'Eng.Reg.013', tag:'طلبات خاصة',
+    title:'طلب نقل',
+    desc:'طلب نقل على نفس قالب الطلبات الخاصة مع بيانات الطالب وهامش رئيس القسم ومدير التسجيل.',
+    directedTo:'السيد معاون العميد للشؤون العلمية المحترم',
+    purpose:'طلب نقل',
+    printType:'petition', petitionKind:'transferRequest',
+    baseFieldsVisible:['studentName','department','studyType','stage','phone'],
+    fields:[
+      ['academicYear','العام الدراسي','year'],
+      ['targetUniversity','إلى جامعة'],
+      ['targetDepartment','إلى قسم'],
+      ['petitionReason','وذلك كوني من','textarea']
+    ],
+    template:'يرجى التفضل بالموافقة على نقلي من كليتكم إلى الجامعة والقسم المبينين في الطلب.'
+  });
+
+  addFormOnce({
+    id:'renomination', icon:'📄', code:'Eng.Reg.014', tag:'طلبات خاصة',
+    title:'طلب إعادة ترشيح',
+    desc:'طلب إعادة ترشيح على نفس قالب الطلبات الخاصة مع بيانات الطالب وهامش رئيس القسم ومدير التسجيل.',
+    directedTo:'السيد معاون العميد للشؤون العلمية المحترم',
+    purpose:'طلب إعادة ترشيح',
+    printType:'petition', petitionKind:'renomination',
+    baseFieldsVisible:['studentName','department','studyType','stage','phone'],
+    fields:[
+      ['academicYear','العام الدراسي','year'],
+      ['targetUniversity','إلى جامعة'],
+      ['targetDepartment','إلى قسم'],
+      ['petitionReason','وذلك كوني من','textarea']
+    ],
+    template:'يرجى التفضل بالموافقة على إعادة ترشيحي إلى الجامعة والقسم المبينين في الطلب.'
+  });
+
+  var oldPetitionSubject = (typeof petitionSubject === 'function') ? petitionSubject : function(k){ return k || ''; };
+  var oldPetitionVerb = (typeof petitionVerb === 'function') ? petitionVerb : function(k){ return k || ''; };
+  window.petitionSubject = petitionSubject = function(kind){
+    if (kind === 'transferRequest') return 'طلب نقل';
+    if (kind === 'renomination') return 'طلب إعادة ترشيح';
+    return oldPetitionSubject(kind);
+  };
+  window.petitionVerb = petitionVerb = function(kind){
+    if (kind === 'transferRequest') return 'نقلي';
+    if (kind === 'renomination') return 'إعادة ترشيحي';
+    return oldPetitionVerb(kind);
+  };
+
+  function officialBoxesHtml(){
+    return '<div class="official-approval-grid petition-official-approval-grid petition-side-approvals-v76">' +
+      '<div class="official-approval-box official-approval-right"><div class="official-approval-title">تأييد رئيس القسم المختص وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>رئيس القسم</div><div class="petition-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div>' +
+      '<div class="official-approval-box official-approval-left"><div class="official-approval-title">تأييد مدير التسجيل وختمه</div><div class="official-free-sign-area"></div><div class="official-approval-footer"><div>مدير التسجيل</div><div class="petition-admin-date" dir="rtl"><span>التاريخ:</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-slot"></span><span class="petition-date-sep">/</span><span class="petition-date-year">202</span></div></div></div>' +
+    '</div>';
+  }
+
+  window.renderPetitionForm = renderPetitionForm = function(form, data){
+    data = data || {};
+    var kind = form && form.petitionKind;
+    var student = val(data.studentName);
+    var dept = val(data.department);
+    var stage = val(data.stage);
+    var study = (typeof displayStudyValue === 'function') ? displayStudyValue(data.studyType) : val(data.studyType);
+    var phone = val(data.phone);
+    var year = (typeof displayYear === 'function') ? displayYear(data.academicYear) : val(data.academicYear);
+    var topLines = '<div class="petition-topline">الى / السيد معاون العميد للشؤون العلمية المحترم ...</div>' +
+      '<div class="petition-topline">بواسطة / السيد مدير شعبة التسجيل والشؤون الطلابية المحترم ...</div>';
+    var body = '';
+
+    if (kind === 'transferRequest' || kind === 'renomination') {
+      var targetUniversity = val(data.targetUniversity);
+      var targetDepartment = val(data.targetDepartment);
+      var action = kind === 'transferRequest' ? 'نقلي' : 'إعادة ترشيحي';
+      body = '<div class="petition-greeting">تحية طيبة :</div>' +
+        '<p>يرجى التفضل بالموافقة على ' + safe(action) + ' من كليتكم / قسم ' + dept + ' / الدراسة ' + study + ' / للعام الدراسي ' + year + ' إلى جامعة ' + targetUniversity + ' / كلية الهندسة / قسم ' + targetDepartment + ' وذلك كوني من ' + val(data.petitionReason) + '.</p>' +
+        '<p class="petition-thanks">مع التقدير</p>';
+    } else {
+      body = '<div class="petition-greeting">تحية طيبة ....</div>' +
+        '<p>إني الطالب / (' + student + ') والمقبول في كليتكم الموقرة / قسم (' + dept + ') المرحلة (' + stage + ') الدراسة (' + study + ') والمقبول في العام الدراسي (' + year + ').</p>' +
+        '<p>ارجو تفضلكم بالموافقة على (' + safe(petitionVerb(kind)) + ') وذلك بسبب (' + val(data.petitionReason) + ').</p>' +
+        '<p class="petition-thanks">ولكم الأمر ... مع فائق الشكر والاحترام</p>';
+    }
+
+    return '<article class="paper petition-paper form-sheet petition-sheet petition-v76 petition-v87"><div class="petition-frame">' +
+      '<div class="corner corner-tr"></div><div class="corner corner-tl"></div><div class="corner corner-br"></div><div class="corner corner-bl"></div>' +
+      topLines +
+      '<div class="petition-mark">م/ ' + safe(petitionSubject(kind)) + '</div>' +
+      '<div class="petition-body petition-body-v87">' + body + '</div>' +
+      '<div class="petition-student-signline-v76">التوقيع:<br>الاسم: ' + student + '<br>القسم: ' + dept + '<br>المرحلة: ' + stage + '<br>الدراسة: ' + study + '<br>رقم الهاتف: ' + phone + '<br>التاريخ: ' + ((typeof currentArabicDate === 'function') ? currentArabicDate() : '') + '</div>' +
+      officialBoxesHtml() +
+    '</div></article>';
+  };
+
+  try { if (typeof renderFormsIfNeeded === 'function') renderFormsIfNeeded(true); } catch(e) {}
+})();
