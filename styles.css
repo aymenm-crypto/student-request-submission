@@ -9181,3 +9181,251 @@ body.print-mode-active.print-form-nonfail #formPage .petition-v76 .official-appr
     -webkit-transform:scale(.94) !important;
   }
 }
+
+/* =========================================================
+   V85 FORM LAYOUT REFINEMENTS ONLY
+   1) الاستضافة: نقل توقيع الطالب إلى الطرف واستغلال الفراغ السفلي لتوسعة تواقيع رئيس القسم/العميد/رئيس الجامعة.
+   2) براءة الذمة: تكبير حقول الاسم/القسم/الهاتف وتكبير المربعات لاستغلال الفراغ السفلي.
+   3) التأجيل/التخفيض/تأجيل الامتحان/رفع الغياب: استغلال جزء من الفراغ السفلي بدون تغيير البنية.
+   ========================================================= */
+
+/* 1) الاستضافة */
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact,
+.print-form-hosting .hosting-sheet-exact,
+.hosting-sheet-exact{
+  min-height:274mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-body-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-body-exact,
+.hosting-sheet-exact .hosting-body-exact{
+  margin-bottom:1.6mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-student-sign-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-student-sign-exact,
+.hosting-sheet-exact .hosting-student-sign-exact{
+  width:64mm !important;
+  margin:5mm auto 2mm 0 !important;
+  text-align:center !important;
+  line-height:1.95 !important;
+  font-size:15.8px !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-review-section-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-review-section-exact,
+.hosting-sheet-exact .hosting-review-section-exact{
+  border-top:2px solid #222 !important;
+  padding-top:3.2mm !important;
+  padding-bottom:2.2mm !important;
+  margin-top:2.2mm !important;
+  min-height:40mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-review-grid-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-review-grid-exact,
+.hosting-sheet-exact .hosting-review-grid-exact{
+  display:grid !important;
+  grid-template-columns:1.2fr .78fr !important;
+  gap:8mm !important;
+  align-items:stretch !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-opinion-col-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-opinion-col-exact,
+.hosting-sheet-exact .hosting-opinion-col-exact{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:space-between !important;
+  min-height:28mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-sign-col-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-sign-col-exact,
+.hosting-sheet-exact .hosting-sign-col-exact{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:space-between !important;
+  align-items:center !important;
+  text-align:center !important;
+  min-height:31mm !important;
+  line-height:2 !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-checkline-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-checkline-exact,
+.hosting-sheet-exact .hosting-checkline-exact{
+  min-height:11mm !important;
+  line-height:1.85 !important;
+  align-items:flex-start !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-review-title-exact,
+.print-form-hosting .hosting-sheet-exact .hosting-review-title-exact,
+.hosting-sheet-exact .hosting-review-title-exact{
+  margin-bottom:2.2mm !important;
+}
+
+/* 2) براءة الذمة */
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet,
+.print-form-clearance .exact-clearance-sheet,
+.exact-clearance-sheet{
+  min-height:274mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info,
+.exact-clearance-sheet .exact-clearance-info{
+  table-layout:fixed !important;
+  margin-bottom:1.8mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info th,
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info td,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info th,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info td,
+.exact-clearance-sheet .exact-clearance-info th,
+.exact-clearance-sheet .exact-clearance-info td{
+  padding:3mm 2.2mm !important;
+  font-size:11.4px !important;
+  font-weight:700 !important;
+  line-height:1.55 !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info td,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info td,
+.exact-clearance-sheet .exact-clearance-info td{
+  font-size:12.1px !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info tr:nth-child(1) td:nth-child(2),
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info tr:nth-child(2) td:nth-child(2),
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info tr:nth-child(3) td:nth-child(2),
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info tr:nth-child(1) td:nth-child(2),
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info tr:nth-child(2) td:nth-child(2),
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info tr:nth-child(3) td:nth-child(2),
+.exact-clearance-sheet .exact-clearance-info tr:nth-child(1) td:nth-child(2),
+.exact-clearance-sheet .exact-clearance-info tr:nth-child(2) td:nth-child(2),
+.exact-clearance-sheet .exact-clearance-info tr:nth-child(3) td:nth-child(2){
+  font-size:12.8px !important;
+  font-weight:800 !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info th:nth-child(1),
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info th:nth-child(1),
+.exact-clearance-sheet .exact-clearance-info th:nth-child(1){width:16% !important;}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info td:nth-child(2),
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info td:nth-child(2),
+.exact-clearance-sheet .exact-clearance-info td:nth-child(2){width:36% !important;}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info th:nth-child(3),
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info th:nth-child(3),
+.exact-clearance-sheet .exact-clearance-info th:nth-child(3){width:14% !important;}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-info td:nth-child(4),
+.print-form-clearance .exact-clearance-sheet .exact-clearance-info td:nth-child(4),
+.exact-clearance-sheet .exact-clearance-info td:nth-child(4){width:34% !important;}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-grid,
+.exact-clearance-sheet .exact-clearance-grid{
+  gap:3.1mm !important;
+  margin-top:1.4mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-box,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-grid .clear-box,
+.exact-clearance-sheet .exact-clearance-grid .clear-box{
+  min-height:56mm !important;
+  height:56mm !important;
+  padding:5mm 5.4mm 4.6mm !important;
+  border-radius:18px !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-box-title,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-grid .clear-box-title,
+.exact-clearance-sheet .exact-clearance-grid .clear-box-title{
+  font-size:15.2px !important;
+  margin-bottom:2.4mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-spacer,
+.print-form-clearance .exact-clearance-sheet .exact-clearance-grid .clear-spacer,
+.exact-clearance-sheet .exact-clearance-grid .clear-spacer{
+  height:24mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .clearance-bottom-note,
+.print-form-clearance .exact-clearance-sheet .clearance-bottom-note,
+.exact-clearance-sheet .clearance-bottom-note{
+  margin-top:1.5mm !important;
+}
+body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .clearance-footer-strip,
+.print-form-clearance .exact-clearance-sheet .clearance-footer-strip,
+.exact-clearance-sheet .clearance-footer-strip{
+  margin-top:1.6mm !important;
+  min-height:7.2mm !important;
+}
+
+/* 3) استغلال الفراغ السفلي في التأجيل/التخفيض/تأجيل الامتحان/رفع الغياب */
+body.print-mode-active.print-form-deferment #formPage .committee-sheet .review-stack-cell,
+body.print-mode-active.print-form-eveningFees #formPage .committee-sheet .review-stack-cell,
+body.print-mode-active.print-form-govFees #formPage .committee-sheet .review-stack-cell,
+body.print-mode-active.print-form-examDelay #formPage .committee-sheet .review-stack-cell,
+body.print-mode-active.print-form-absence #formPage .committee-sheet .review-stack-cell,
+.print-form-deferment .committee-sheet .review-stack-cell,
+.print-form-eveningFees .committee-sheet .review-stack-cell,
+.print-form-govFees .committee-sheet .review-stack-cell,
+.print-form-examDelay .committee-sheet .review-stack-cell,
+.print-form-absence .committee-sheet .review-stack-cell,
+.committee-sheet .review-stack-cell{
+  min-height:24mm !important;
+  padding:4mm !important;
+}
+body.print-mode-active.print-form-deferment #formPage .committee-sheet .fee-row,
+body.print-mode-active.print-form-eveningFees #formPage .committee-sheet .fee-row,
+body.print-mode-active.print-form-govFees #formPage .committee-sheet .fee-row,
+body.print-mode-active.print-form-examDelay #formPage .committee-sheet .fee-row,
+body.print-mode-active.print-form-absence #formPage .committee-sheet .fee-row,
+.print-form-deferment .committee-sheet .fee-row,
+.print-form-eveningFees .committee-sheet .fee-row,
+.print-form-govFees .committee-sheet .fee-row,
+.print-form-examDelay .committee-sheet .fee-row,
+.print-form-absence .committee-sheet .fee-row,
+.committee-sheet .fee-row{
+  min-height:24mm !important;
+}
+body.print-mode-active.print-form-deferment #formPage .committee-sheet .fee-row-title-cell,
+body.print-mode-active.print-form-deferment #formPage .committee-sheet .fee-options-stack,
+body.print-mode-active.print-form-deferment #formPage .committee-sheet .fee-row-receipt,
+body.print-mode-active.print-form-eveningFees #formPage .committee-sheet .fee-row-title-cell,
+body.print-mode-active.print-form-eveningFees #formPage .committee-sheet .fee-options-stack,
+body.print-mode-active.print-form-eveningFees #formPage .committee-sheet .fee-row-receipt,
+body.print-mode-active.print-form-govFees #formPage .committee-sheet .fee-row-title-cell,
+body.print-mode-active.print-form-govFees #formPage .committee-sheet .fee-options-stack,
+body.print-mode-active.print-form-govFees #formPage .committee-sheet .fee-row-receipt,
+body.print-mode-active.print-form-examDelay #formPage .committee-sheet .fee-row-title-cell,
+body.print-mode-active.print-form-examDelay #formPage .committee-sheet .fee-options-stack,
+body.print-mode-active.print-form-examDelay #formPage .committee-sheet .fee-row-receipt,
+body.print-mode-active.print-form-absence #formPage .committee-sheet .fee-row-title-cell,
+body.print-mode-active.print-form-absence #formPage .committee-sheet .fee-options-stack,
+body.print-mode-active.print-form-absence #formPage .committee-sheet .fee-row-receipt,
+.print-form-deferment .committee-sheet .fee-row-title-cell,
+.print-form-deferment .committee-sheet .fee-options-stack,
+.print-form-deferment .committee-sheet .fee-row-receipt,
+.print-form-eveningFees .committee-sheet .fee-row-title-cell,
+.print-form-eveningFees .committee-sheet .fee-options-stack,
+.print-form-eveningFees .committee-sheet .fee-row-receipt,
+.print-form-govFees .committee-sheet .fee-row-title-cell,
+.print-form-govFees .committee-sheet .fee-options-stack,
+.print-form-govFees .committee-sheet .fee-row-receipt,
+.print-form-examDelay .committee-sheet .fee-row-title-cell,
+.print-form-examDelay .committee-sheet .fee-options-stack,
+.print-form-examDelay .committee-sheet .fee-row-receipt,
+.print-form-absence .committee-sheet .fee-row-title-cell,
+.print-form-absence .committee-sheet .fee-options-stack,
+.print-form-absence .committee-sheet .fee-row-receipt,
+.committee-sheet .fee-row-title-cell,
+.committee-sheet .fee-options-stack,
+.committee-sheet .fee-row-receipt{
+  padding-top:4mm !important;
+  padding-bottom:4mm !important;
+}
+body.print-mode-active.print-form-deferment #formPage .committee-sheet .academic-reg-box,
+body.print-mode-active.print-form-eveningFees #formPage .committee-sheet .academic-reg-box,
+body.print-mode-active.print-form-govFees #formPage .committee-sheet .academic-reg-box,
+body.print-mode-active.print-form-examDelay #formPage .committee-sheet .academic-reg-box,
+body.print-mode-active.print-form-absence #formPage .committee-sheet .academic-reg-box,
+.print-form-deferment .committee-sheet .academic-reg-box,
+.print-form-eveningFees .committee-sheet .academic-reg-box,
+.print-form-govFees .committee-sheet .academic-reg-box,
+.print-form-examDelay .committee-sheet .academic-reg-box,
+.print-form-absence .committee-sheet .academic-reg-box,
+.committee-sheet .academic-reg-box{
+  min-height:28mm !important;
+}
+
+@media print{
+  body.print-mode-active.print-form-clearance #formPage .exact-clearance-sheet .exact-clearance-grid .clear-box{min-height:56mm !important;height:56mm !important;}
+  body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact .hosting-review-section-exact{min-height:40mm !important;}
+}
