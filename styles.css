@@ -9666,3 +9666,68 @@ body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .offici
 body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .continuity-box-text,
 body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .official-approval-title,
 body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .official-approval-footer{font-size:10px!important;line-height:1.35!important;}
+
+/* =========================================================
+   V90 Hosting final polish
+   - Remove gap between name/title and date in signature column.
+   - Give more upper signing space, especially for president section.
+   - Add a neat border frame similar to petition forms.
+   ========================================================= */
+body.print-mode-active.print-form-hosting #formPage .hosting-sheet-exact,
+.print-form-hosting .hosting-sheet-exact,
+.hosting-sheet-exact{
+  border:4px double #222 !important;
+  background:#fff !important;
+  padding:9mm 10mm 8mm !important;
+  box-sizing:border-box !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact,
+.print-form-hosting .hosting-sign-col-exact,
+.hosting-sheet-exact .hosting-sign-col-exact{
+  justify-content:flex-end !important;
+  min-height:35mm !important;
+  padding-top:11.5mm !important; /* blank area for signature */
+  padding-bottom:0 !important;
+  gap:0 !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-review-final-exact .hosting-sign-col-exact,
+.print-form-hosting .hosting-review-final-exact .hosting-sign-col-exact,
+.hosting-sheet-exact .hosting-review-final-exact .hosting-sign-col-exact{
+  padding-top:13mm !important; /* a bit more space for university president */
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact > div,
+.print-form-hosting .hosting-sign-col-exact > div,
+.hosting-sheet-exact .hosting-sign-col-exact > div{
+  margin:0 !important;
+  line-height:1.22 !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact .hosting-date-exact,
+.print-form-hosting .hosting-sign-col-exact .hosting-date-exact,
+.hosting-sheet-exact .hosting-sign-col-exact .hosting-date-exact{
+  margin-top:0 !important;
+  padding-top:.8mm !important;
+}
+body.print-mode-active.print-form-hosting #formPage .hosting-review-section-exact,
+.print-form-hosting .hosting-review-section-exact,
+.hosting-sheet-exact .hosting-review-section-exact{
+  margin-top:2.6mm !important;
+}
+
+/* =========================================================
+   V91 petition closing line only
+   Unify closing phrase position in the center for return/dismissal/nonfail/transfer/renomination.
+   ========================================================= */
+.petition-v76 .petition-thanks,
+.petition-v87 .petition-thanks,
+body.print-mode-active.print-form-return #formPage .petition-thanks,
+body.print-mode-active.print-form-dismissal #formPage .petition-thanks,
+body.print-mode-active.print-form-nonfail #formPage .petition-thanks,
+body.print-mode-active.print-form-transferRequest #formPage .petition-thanks,
+body.print-mode-active.print-form-renomination #formPage .petition-thanks{
+  display:block !important;
+  width:100% !important;
+  text-align:center !important;
+  font-weight:700 !important;
+  margin:6mm auto 5mm !important;
+  line-height:1.8 !important;
+}
