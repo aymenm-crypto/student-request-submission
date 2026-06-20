@@ -6597,3 +6597,94 @@ function setupServerBindings(){
 
   try { if (typeof renderFormsIfNeeded === 'function') renderFormsIfNeeded(true); } catch(e) {}
 })();
+
+
+/* V89 mobile: make a real one-page PDF to avoid browser URL/footer and blank second page */
+(function(){
+  function isMobileLike(){
+    try {
+      var ua = navigator.userAgent || '';
+      return /iPhone|iPad|iPod|Android/i.test(ua) || (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+    } catch(e){ return false; }
+  }
+  function loadScriptOnce(src, globalTest){
+    return new Promise(function(resolve, reject){
+      try { if (globalTest && globalTest()) return resolve(); } catch(e) {}
+      var existing = Array.prototype.slice.call(document.scripts || []).find(function(sc){ return sc.src === src; });
+      if (existing) { existing.addEventListener('load', function(){ resolve(); }); existing.addEventListener('error', reject); return; }
+      var sc = document.createElement('script');
+      sc.src = src; sc.async = true; sc.crossOrigin = 'anonymous';
+      sc.onload = function(){ resolve(); };
+      sc.onerror = function(){ reject(new Error('تعذر تحميل مكتبة الطباعة.')); };
+      document.head.appendChild(sc);
+    });
+  }
+  function activeClass(){
+    try { return (typeof getActivePrintClass === 'function' ? getActivePrintClass() : '').trim(); } catch(e){ return ''; }
+  }
+  function land(){
+    try { return typeof isLandscapeForm === 'function' ? !!isLandscapeForm() : false; } catch(e){ return false; }
+  }
+  async function makeOnePagePdf(){
+    if (typeof ensureFreshPreview === 'function') ensureFreshPreview();
+    var printArea = document.getElementById('printArea');
+    var sheet = printArea && (printArea.firstElementChild || printArea);
+    if (!sheet || !String(printArea.innerHTML || '').trim()) {
+      alert('لا توجد استمارة جاهزة للطباعة. املأ الاستمارة أولاً.');
+      return false;
+    }
+    await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function(){ return !!window.html2canvas; });
+    await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function(){ return !!(window.jspdf && window.jspdf.jsPDF); });
+
+    var cls = activeClass();
+    document.body.classList.add('print-mode-active','mobile-pdf-v89');
+    cls.split(/\s+/).forEach(function(c){ if(c) document.body.classList.add(c); });
+    await new Promise(function(r){ setTimeout(r, 220); });
+
+    var canvas = await window.html2canvas(sheet, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: Math.max(document.documentElement.clientWidth, sheet.scrollWidth, 900),
+      windowHeight: Math.max(document.documentElement.clientHeight, sheet.scrollHeight, 1300)
+    });
+
+    document.body.classList.remove('mobile-pdf-v89');
+
+    var jsPDF = window.jspdf.jsPDF;
+    var isLand = land();
+    var pdf = new jsPDF({orientation: isLand ? 'landscape' : 'portrait', unit:'mm', format:'a4', compress:true});
+    var pageW = isLand ? 297 : 210;
+    var pageH = isLand ? 210 : 297;
+    var margin = 4;
+    var maxW = pageW - margin*2;
+    var maxH = pageH - margin*2;
+    var imgW = maxW;
+    var imgH = canvas.height * imgW / canvas.width;
+    if (imgH > maxH) { imgH = maxH; imgW = canvas.width * imgH / canvas.height; }
+    var x = (pageW - imgW) / 2;
+    var y = (pageH - imgH) / 2;
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.94), 'JPEG', x, y, imgW, imgH, undefined, 'FAST');
+    var blob = pdf.output('blob');
+    var url = URL.createObjectURL(blob);
+    var w = window.open(url, '_blank');
+    if (!w) {
+      var a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.download = 'student-request.pdf';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+    setTimeout(function(){ try { URL.revokeObjectURL(url); } catch(e) {} }, 120000);
+    return true;
+  }
+  var previousPrint = window.printCurrentPreview;
+  window.printCurrentPreview = function(){
+    if (!isMobileLike()) return previousPrint ? previousPrint() : undefined;
+    makeOnePagePdf().catch(function(err){
+      try { console.error(err); } catch(e) {}
+      if (previousPrint) previousPrint();
+    });
+  };
+  try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+})();

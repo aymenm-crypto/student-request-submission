@@ -9640,3 +9640,29 @@ body.print-mode-active.print-form-hosting #formPage .hosting-sign-col-exact .hos
   margin-top:.6mm !important;
   padding-top:0 !important;
 }
+
+
+/* V89 mobile PDF capture sizing */
+body.mobile-pdf-v89 #printArea > .form-sheet,
+body.mobile-pdf-v89 #printArea > .paper,
+body.mobile-pdf-v89 #printArea > .official-paper{
+  box-shadow:none !important;
+  margin:0 auto !important;
+}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet{
+  min-height:252mm !important;
+  height:auto !important;
+  padding:2mm 4mm 1mm !important;
+}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .exact-continuity-head{margin-bottom:1mm!important;}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .exact-continuity-title{font-size:15px!important;margin:1.2mm 0!important;}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .exact-continuity-info th,
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .exact-continuity-info td{font-size:10px!important;padding:1.25mm 1.1mm!important;}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .exact-continuity-grid{gap:1.1mm!important;margin-top:1.2mm!important;}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .continuity-request-box,
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .continuity-purpose-box{min-height:25mm!important;padding:2mm!important;}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .continuity-approval-pair-wrap{min-height:32mm!important;padding:1.5mm!important;}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .official-approval-box{min-height:31mm!important;}
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .continuity-box-text,
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .official-approval-title,
+body.mobile-pdf-v89.print-form-continuity article.exact-continuity-sheet .official-approval-footer{font-size:10px!important;line-height:1.35!important;}
