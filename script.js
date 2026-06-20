@@ -5081,3 +5081,125 @@ function setupServerBindings(){
   else runFinalFix();
   [100,300,700,1200,2000,3500].forEach(function(ms){ setTimeout(runFinalFix, ms); });
 })();
+
+/* ==========================================================
+   FINAL PRINT EXACT FIX v70
+   - Opens print dialog from a hidden iframe (no visible HTML print page)
+   - Uses original stylesheet/classes; no scaling, so old form dimensions stay the same
+   - Keeps one A4 page by clipping overflow inside the print frame
+   ========================================================== */
+(function(){
+  function byId(id){ return document.getElementById(id); }
+
+  function getActivePrintClass(){
+    try {
+      if (typeof activeForm !== 'undefined' && activeForm && activeForm.id) return 'print-form-' + activeForm.id;
+    } catch(e) {}
+    return '';
+  }
+
+  function isLandscapeForm(){
+    try {
+      if (typeof activeForm !== 'undefined' && activeForm && activeForm.pageOrientation === 'landscape') return true;
+      if (typeof activeForm !== 'undefined' && activeForm && activeForm.id === 'medicalCheck') return true;
+    } catch(e) {}
+    return false;
+  }
+
+  function ensureFreshPreview(){
+    try {
+      if (typeof syncPreview === 'function') syncPreview();
+    } catch(e) {}
+  }
+
+  function removeOldPrintFrames(){
+    document.querySelectorAll('iframe.__student_request_print_frame__').forEach(function(f){
+      try { f.remove(); } catch(e) {}
+    });
+  }
+
+  function buildPrintFrameHtml(printInner, formClass, landscape){
+    var cache = Date.now();
+    var pageCss = landscape ? `
+      @page{size:A4 landscape;margin:5mm!important;}
+      html,body{margin:0!important;padding:0!important;background:#fff!important;width:287mm!important;min-width:287mm!important;max-width:287mm!important;height:200mm!important;min-height:200mm!important;max-height:200mm!important;overflow:hidden!important;}
+      #formPage,#printArea{display:block!important;width:287mm!important;height:200mm!important;min-height:0!important;max-height:200mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;box-sizing:border-box!important;}
+    ` : `
+      @page{size:A4 portrait;margin:5mm!important;}
+      html,body{margin:0!important;padding:0!important;background:#fff!important;width:200mm!important;min-width:200mm!important;max-width:200mm!important;height:287mm!important;min-height:287mm!important;max-height:287mm!important;overflow:hidden!important;}
+      #formPage,#printArea{display:block!important;width:200mm!important;height:287mm!important;min-height:0!important;max-height:287mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;box-sizing:border-box!important;}
+    `;
+
+    var fixCss = `
+      *{box-sizing:border-box!important;}
+      body{direction:rtl!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+      .toolbar,.topbar,.home-panel,.service-actions,.print-actions,.preview-head,.section-head,.section-tools,.actions,.no-print{display:none!important;}
+      #printArea > *{page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}
+      #printArea > .form-sheet,
+      #printArea > .petition-sheet,
+      #printArea > .exact-clearance-sheet,
+      #printArea > .medical-two-up-sheet,
+      #printArea > .medical-two-up-sheet-v53,
+      #printArea > .medical-two-up-sheet-v54{margin:0 auto!important;transform:none!important;transform-origin:top center!important;box-shadow:none!important;}
+      @media print{${pageCss}}
+      ${pageCss}
+    `;
+
+    return '<!doctype html><html lang="ar" dir="rtl"><head>'+
+      '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+      '<link rel="stylesheet" href="styles.css?v='+cache+'">'+
+      '<style>'+fixCss+'</style>'+
+      '</head><body class="print-mode-active '+formClass+'">'+
+      '<div id="formPage"><div id="printArea">'+printInner+'</div></div>'+
+      '<script>window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print();},550);});window.onafterprint=function(){setTimeout(function(){try{if(window.frameElement)window.frameElement.remove();}catch(e){}},700);};<\/script>'+
+      '</body></html>';
+  }
+
+  function openHiddenIframePrint(){
+    ensureFreshPreview();
+    var printArea = byId('printArea');
+    if (!printArea || !String(printArea.innerHTML || '').trim()) {
+      alert('لا توجد استمارة جاهزة للطباعة. املأ الاستمارة أولاً.');
+      return;
+    }
+
+    removeOldPrintFrames();
+
+    var frame = document.createElement('iframe');
+    frame.className = '__student_request_print_frame__';
+    frame.setAttribute('aria-hidden','true');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = '1px';
+    frame.style.height = '1px';
+    frame.style.border = '0';
+    frame.style.opacity = '0';
+    frame.style.pointerEvents = 'none';
+    document.body.appendChild(frame);
+
+    var doc = frame.contentWindow.document;
+    doc.open();
+    doc.write(buildPrintFrameHtml(printArea.innerHTML, getActivePrintClass(), isLandscapeForm()));
+    doc.close();
+
+    setTimeout(function(){
+      try { if (frame && frame.parentNode) frame.parentNode.removeChild(frame); } catch(e) {}
+    }, 45000);
+  }
+
+  window.printCurrentPreview = function(){
+    try { openHiddenIframePrint(); }
+    catch(e){ alert(e && e.message ? e.message : 'تعذر فتح الطباعة.'); }
+  };
+  try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+
+  function rehookPrintButton(){
+    var btn = byId('printBtn');
+    if (!btn || btn.__exactPrintFixV70) return;
+    btn.__exactPrintFixV70 = true;
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rehookPrintButton);
+  else rehookPrintButton();
+})();
