@@ -8932,3 +8932,53 @@ body.pdf-render-mode{background:#fff!important;}
   margin:0!important;
   box-shadow:none!important;
 }
+
+/* =========================================================
+   V78 TARGETED PATCH ONLY
+   1) تكبير بسيط لخيارات المرحلة في استمرارية الدوام.
+   2) حذف الخط الزائد داخل تواقيع استمارات عودة/ترقين/عدم رسوب فقط.
+   ========================================================= */
+.print-form-continuity .continuity-stage-cell .stage-print-option,
+.print-form-continuity .continuity-stage-cell .stage-print-option span,
+.continuity-onepage .continuity-stage-cell .stage-print-option,
+.continuity-onepage .continuity-stage-cell .stage-print-option span{
+  font-size:9.2pt !important;
+  line-height:1.25 !important;
+  white-space:nowrap !important;
+  vertical-align:middle !important;
+}
+.print-form-continuity .continuity-stage-cell .square-mark,
+.continuity-onepage .continuity-stage-cell .square-mark{
+  width:3.2mm !important;
+  height:3.2mm !important;
+  min-width:3.2mm !important;
+  font-size:7.4pt !important;
+  line-height:3.1mm !important;
+  margin-inline:0.4mm !important;
+}
+.print-form-continuity .continuity-stage-cell,
+.continuity-onepage .continuity-stage-cell{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+}
+
+/* حذف الخط الزائد الذي كان يظهر فوق اسم/تاريخ رئيس القسم ومدير التسجيل في القوالب الثلاثة فقط */
+.print-form-return .petition-sheet .official-approval-footer,
+.print-form-dismissal .petition-sheet .official-approval-footer,
+.print-form-nonfail .petition-sheet .official-approval-footer,
+.petition-sheet.petition-v76 .official-approval-footer{
+  border-top:0 !important;
+  box-shadow:none !important;
+  background-image:none !important;
+}
+.print-form-return .petition-sheet .official-approval-footer::before,
+.print-form-return .petition-sheet .official-approval-footer::after,
+.print-form-dismissal .petition-sheet .official-approval-footer::before,
+.print-form-dismissal .petition-sheet .official-approval-footer::after,
+.print-form-nonfail .petition-sheet .official-approval-footer::before,
+.print-form-nonfail .petition-sheet .official-approval-footer::after,
+.petition-sheet.petition-v76 .official-approval-footer::before,
+.petition-sheet.petition-v76 .official-approval-footer::after{
+  display:none !important;
+  content:none !important;
+}

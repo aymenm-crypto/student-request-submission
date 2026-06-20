@@ -5723,3 +5723,49 @@ function setupServerBindings(){
     }
   };
 })();
+
+/* =========================================================
+   V78 TARGETED PATCH ONLY
+   - الموبايل يرجع للطباعة العادية لا PDF.
+   - إصلاح فتح استمارة الاستضافة داخل الكلية/القسم إذا تعطل زرها.
+   ========================================================= */
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function findHostingForm(){
+    try {
+      var list = (typeof forms !== 'undefined' && Array.isArray(forms)) ? forms : (Array.isArray(window.forms) ? window.forms : []);
+      return list.find(function(f){
+        return String(f.id || '') === 'hosting' || String(f.title || '').indexOf('استضاف') > -1;
+      });
+    } catch(e) { return null; }
+  }
+
+  // إلغاء مسار PDF للموبايل نهائياً: كل الأجهزة تستخدم الطباعة، والحفظ PDF يتم من نافذة الطباعة.
+  window.saveAndPrintCurrentRequest = saveAndPrintCurrentRequest = async function(){
+    try {
+      var result = await saveActiveRequest({ mode:'print', force:true });
+      if (!result || result.ok !== true) throw new Error('تعذر تجهيز رقم الطلب.');
+      printCurrentPreview();
+    } catch(err) {
+      var st = byId('submitStatus');
+      if (st) st.textContent = (err && err.message) ? err.message : 'تعذر تجهيز الطباعة.';
+      try { printCurrentPreview(); } catch(e) {}
+    }
+  };
+
+  // احتياط: إذا زر الاستضافة لم يفتح بسبب تعارض سابق، افتحها مباشرة من أي زر/بطاقة نصها يحتوي استضافة.
+  document.addEventListener('click', function(e){
+    var target = e.target && e.target.closest ? e.target.closest('.open-form-btn, .card, button') : null;
+    if (!target) return;
+    var text = String(target.textContent || '');
+    var dataId = target.getAttribute && target.getAttribute('data-id');
+    if (String(dataId || '') === 'hosting' || text.indexOf('استضاف') > -1) {
+      var form = findHostingForm();
+      if (form && typeof openForm === 'function') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        openForm(form);
+      }
+    }
+  }, true);
+})();
