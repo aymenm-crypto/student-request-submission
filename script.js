@@ -4974,3 +4974,110 @@ function setupServerBindings(){
   else forceForms();
   [200,600,1200,2500].forEach(function(ms){ setTimeout(forceForms, ms); });
 })();
+
+
+/* =========================================================
+   FINAL FIX v4 - GitHub Pages student version
+   - remove dashboard button completely
+   - add request number to upload
+   - reliable one-page print popup, no blank second page
+   ========================================================= */
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function all(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+  function norm(t){ return String(t||'').replace(/\s+/g,' ').trim(); }
+
+  function removeDashboardButtonsFinal(){
+    all('button,a,span').forEach(function(el){
+      var t = norm(el.textContent);
+      if (t === 'لوحة المتابعة' || t.indexOf('لوحة المتابعة') !== -1 || t === 'المتابعة') {
+        var btn = el.closest('button,a') || el;
+        btn.remove();
+      }
+    });
+    all('[data-dashboard], .dashboard-entry, .dashboard-button, .dashboard-modal-trigger').forEach(function(el){ el.remove(); });
+    var actions = document.querySelector('#homePage .hero-actions');
+    if (actions) all('button,a', actions).forEach(function(b, i){ if (i > 1) b.remove(); });
+  }
+
+  function ensureUploadRequestNo(){
+    var form = byId('completedUploadForm');
+    if (!form || byId('uploadRequestNo')) return;
+    var grid = form.querySelector('.grid.two') || form;
+    var label = document.createElement('label');
+    label.className = 'field';
+    label.innerHTML = '<span>رقم الطلب</span><input id="uploadRequestNo" name="uploadRequestNo" placeholder="مثال: Eng.Reg.001" required dir="ltr">';
+    grid.insertBefore(label, grid.firstChild);
+  }
+
+  function getCssLinks(){
+    var links = all('link[rel="stylesheet"]').map(function(l){
+      var href = l.getAttribute('href') || '';
+      if (!href) return '';
+      return '<link rel="stylesheet" href="' + href.replace(/"/g,'&quot;') + '">';
+    }).join('\n');
+    return links || '<link rel="stylesheet" href="styles.css?v=final-onepage-print-upload-v4">';
+  }
+
+  function getFormPrintClass(){
+    try {
+      if (typeof activeForm !== 'undefined' && activeForm && activeForm.id) return 'print-form-' + activeForm.id;
+    } catch(e) {}
+    return '';
+  }
+
+  function openOnePagePrintWindow(){
+    var printArea = byId('printArea');
+    if (!printArea || !printArea.innerHTML.trim()) throw new Error('لا توجد استمارة جاهزة للطباعة.');
+    var cls = getFormPrintClass();
+    var override = `
+      @page{size:A4 portrait;margin:0!important;}
+      html,body{margin:0!important;padding:0!important;width:210mm!important;height:297mm!important;min-width:210mm!important;min-height:297mm!important;max-height:297mm!important;overflow:hidden!important;background:#fff!important;}
+      body{direction:rtl!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+      #formPage,#printArea{display:block!important;width:210mm!important;height:297mm!important;min-height:0!important;max-height:297mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;position:relative!important;}
+      #printArea>*{margin:0 auto!important;page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}
+      #printArea > .form-sheet,
+      #printArea > .petition-sheet,
+      #printArea > .exact-clearance-sheet,
+      #printArea > .medical-two-up-sheet,
+      #printArea > .medical-two-up-sheet-v53,
+      #printArea > .medical-two-up-sheet-v54{transform:scale(.92)!important;transform-origin:top center!important;margin:0 auto!important;}
+      .print-actions,.preview-head,.section-head,.section-tools,.actions{display:none!important;}
+      @media print{html,body,#formPage,#printArea{width:210mm!important;height:297mm!important;max-height:297mm!important;overflow:hidden!important;margin:0!important;padding:0!important;} }
+    `;
+    var html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + getCssLinks() + '<style>' + override + '</style></head><body class="print-popup-onepage print-mode-active ' + cls + '"><div id="formPage"><div id="printArea">' + printArea.innerHTML + '</div></div><script>window.onload=function(){setTimeout(function(){window.focus();window.print();},700)}<\/script></body></html>';
+    var w = window.open('', '_blank');
+    if (!w) {
+      alert('المتصفح منع نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم جرّب مرة ثانية.');
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
+
+  window.printCurrentPreview = function(){
+    try { openOnePagePrintWindow(); }
+    catch(e){ alert(e.message || 'تعذر تجهيز الطباعة.'); }
+  };
+  try { printCurrentPreview = window.printCurrentPreview; } catch(e) {}
+
+  function hookPrintButtonHard(){
+    var btn = byId('printBtn');
+    if (!btn || btn.__finalPrintHook) return;
+    btn.__finalPrintHook = true;
+    btn.addEventListener('click', function(e){
+      /* Let the original save function run. It will call the overridden printCurrentPreview. */
+      setTimeout(removeDashboardButtonsFinal, 50);
+    }, true);
+  }
+
+  function runFinalFix(){
+    removeDashboardButtonsFinal();
+    ensureUploadRequestNo();
+    hookPrintButtonHard();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', runFinalFix);
+  else runFinalFix();
+  [100,300,700,1200,2000,3500].forEach(function(ms){ setTimeout(runFinalFix, ms); });
+})();

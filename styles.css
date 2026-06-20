@@ -8393,3 +8393,52 @@ body.dark .dashboard-pro-v8 .dashboard-developer-mini span, .dashboard-pro-v8.da
   .sheet-title,.clearance-title,.hosting-title-main-exact,.paper-title{break-after:avoid!important;page-break-after:avoid!important;}
   @page{size:A4 portrait;margin:4mm;}
 }
+
+
+/* =========================================================
+   FINAL FIX v4 - GitHub Pages only
+   - hide dashboard/follow-up controls from student pages
+   - upload page matches original visual language
+   - force all printed forms to a single A4 page and prevent blank page
+   ========================================================= */
+button[data-dashboard], a[data-dashboard], .dashboard-entry, .dashboard-button, .dashboard-modal-trigger { display:none !important; }
+
+#homePage .hero-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:22px}
+#homePage .hero-actions .btn{min-width:170px;min-height:54px;border-radius:16px;font-size:18px;font-weight:800;box-shadow:0 16px 32px rgba(37,99,235,.16)}
+#homePage .hero-actions .btn.primary{background:linear-gradient(135deg,#315fe6,#4675ee);color:#fff}
+#homePage .hero-actions .btn.secondary{background:#fff;color:#0f172a;border:1px solid #d9e4f2}
+#homePage .hero-actions .btn:nth-child(n+3){display:none!important}
+
+#uploadPage .section-panel.narrow{max-width:1120px;margin-inline:auto;background:var(--surface);border:1px solid var(--line);border-radius:26px;box-shadow:0 22px 55px rgba(15,35,70,.08);padding:28px}
+#uploadPage .section-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px;background:#f8fbff;border:1px solid #d9e4f2;border-radius:20px;padding:18px 20px}
+#uploadPage .section-kicker{display:block;color:#315fe6;font-weight:900;margin-bottom:8px}
+#uploadPage h3{font-size:30px;margin:0;color:#0f172a}
+#uploadPage .simple-form{background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);border:1px solid #d9e4f2;border-radius:24px;padding:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+#uploadPage .field span{font-size:16px;font-weight:900;color:#13223a;margin-bottom:8px}
+#uploadPage .field input,#uploadPage .field select{border-radius:16px;border:1px solid #d9e4f2;background:#fff;min-height:54px;font-size:16px;padding:10px 14px}
+#uploadPage .upload-box{border:2px dashed #9fb8ea;background:#f5f9ff;border-radius:22px;min-height:150px;display:flex!important;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#12315f;font-size:18px;font-weight:900;margin-top:18px;cursor:pointer;transition:.18s ease}
+#uploadPage .upload-box:hover{background:#edf5ff;border-color:#315fe6;transform:translateY(-1px)}
+#uploadPage .upload-box::before{content:'📎';font-size:34px;line-height:1}
+#uploadPage .info-box{background:#fff8e7;border:1px solid #ffd27a;border-radius:18px;padding:14px 16px;margin-top:14px;font-weight:800;color:#6b4800;text-align:center;line-height:1.8}
+#uploadPage .actions{justify-content:center;margin-top:18px}
+#uploadPage .actions .btn{min-width:170px;min-height:52px;border-radius:16px;font-weight:900;font-size:17px}
+#uploadPage .grid.two{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:720px){#uploadPage .grid.two{grid-template-columns:1fr}#uploadPage .section-head{align-items:stretch;flex-direction:column}#uploadPage h3{font-size:24px}}
+
+/* Print window/normal print: only printable form, one page, no extra blank page */
+@media print{
+  @page{size:A4 portrait;margin:0!important;}
+  html,body{width:210mm!important;height:297mm!important;min-width:210mm!important;min-height:297mm!important;max-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;}
+  body *{visibility:hidden!important;}
+  #formPage,#formPage *,#printArea,#printArea *{visibility:visible!important;}
+  .app-shell>.topbar,#homePage,#formsPage,#uploadPage,#templatesPage,#formPage .section-head,#formPage .workspace>.workspace-panel:first-child,.preview-head,.actions,.section-tools{display:none!important;}
+  #formPage{display:block!important;position:absolute!important;inset:0!important;width:210mm!important;height:297mm!important;max-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;}
+  #formPage .workspace,#formPage .preview-panel,#formPage .hidden-preview{display:block!important;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:#fff!important;overflow:hidden!important;}
+  #printArea{display:block!important;width:210mm!important;height:297mm!important;min-height:0!important;max-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}
+  #printArea>*{page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;margin:0 auto!important;}
+}
+
+/* print popup body */
+body.print-popup-onepage{margin:0!important;padding:0!important;width:210mm!important;height:297mm!important;overflow:hidden!important;background:#fff!important;}
+body.print-popup-onepage #formPage, body.print-popup-onepage #printArea{display:block!important;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;}
+body.print-popup-onepage #printArea>*{margin:0 auto!important;page-break-before:avoid!important;page-break-after:avoid!important;page-break-inside:avoid!important;break-before:avoid-page!important;break-after:avoid-page!important;break-inside:avoid-page!important;}
